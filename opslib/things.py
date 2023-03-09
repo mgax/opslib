@@ -21,6 +21,8 @@ class Thing:
     class Props:
         pass
 
+    Meta = Meta
+
     _meta = None
 
     def __init__(self, **kwargs):
@@ -45,27 +47,18 @@ class Thing:
                 f"Cannot attach {self!r} to {parent!r} because it's already attached"
             )
 
-        self._meta = Meta(
-            thing=self,
-            name=name,
-            parent=parent,
-        )
-        if hasattr(self, "build"):
-            self.build()
+        self._meta = self.Meta(thing=self, name=name, parent=parent)
+        self.build()
 
     def __iter__(self):
         return iter(self._children.values())
+
+    def build(self):
+        pass
 
 
 class Stack(Thing):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
-        self._meta = Meta(
-            thing=self,
-            name="__root__",
-            parent=None,
-        )
-
-        if hasattr(self, "build"):
-            self.build()
+        self._meta = self.Meta(thing=self, name="__root__", parent=None)
+        self.build()

@@ -1,7 +1,7 @@
 import pytest
 
 from opslib.props import Prop
-from opslib.things import Stack, Thing
+from opslib.things import Meta, Stack, Thing
 
 
 def test_thing_props():
@@ -92,3 +92,19 @@ def test_iter():
     stack.a = Thing()
     stack.b = Thing()
     assert list(stack) == [stack.a, stack.b]
+
+
+def test_custom_meta_class():
+    class CustomMeta(Meta):
+        pass
+
+    class CustomStack(Stack):
+        Meta = CustomMeta
+
+    class CustomThing(Thing):
+        Meta = CustomMeta
+
+    stack = CustomStack()
+    stack.child = CustomThing()
+    assert isinstance(stack._meta, CustomMeta)
+    assert isinstance(stack.child._meta, CustomMeta)
