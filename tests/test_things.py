@@ -1,4 +1,14 @@
+from opslib.props import Prop
 from opslib.things import Stack, Thing
+
+
+def test_thing_props():
+    class Bench(Thing):
+        class Props:
+            name = Prop(str)
+
+    bench = Bench(name="thingie")
+    assert bench.props.name == "thingie"
 
 
 def test_stack_calls_build():
