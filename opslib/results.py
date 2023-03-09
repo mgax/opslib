@@ -20,3 +20,7 @@ class Result:
     def raise_if_failed(self, *args):
         if self.failed:
             raise OperationError(*args, result=self)
+
+    def print_output(self):
+        if self.output:
+            print(self.output)

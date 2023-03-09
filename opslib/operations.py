@@ -1,4 +1,9 @@
 import logging
+import sys
+
+from click import echo, style
+
+from .results import OperationError
 
 logger = logging.getLogger(__name__)
 
@@ -28,12 +33,83 @@ class Operation:
         return f"<Operation {self}>"
 
 
+class Printer:
+    def __init__(self, thing):
+        self.thing = thing
+        self.thing_str = str(self.thing)
+        self.thing_type_str = type(self.thing).__name__
+
+    def print_thing(self, wip=False, failed=False, changed=False):
+        if wip:
+            thing_color = dict(dim=True)
+            status_color = dict(dim=True)
+            status = "..."
+
+        elif failed:
+            thing_color = dict(fg="red")
+            status_color = dict(fg="red")
+            status = "[failed]"
+
+        elif changed:
+            thing_color = dict(fg="yellow")
+            status_color = dict(fg="yellow")
+            status = "[changed]"
+
+        else:
+            thing_color = dict(dim=True)
+            status_color = dict(fg="green")
+            status = "[ok]"
+
+        bits = [
+            style(self.thing_str, **thing_color),
+            style(self.thing_type_str, fg="cyan"),
+            style(status, **status_color),
+        ]
+        echo(" ".join(bits))
+
+    def print_result(self, result, overwrite=False):
+        if overwrite:
+            echo("\033[F", nl=False)
+
+        self.print_thing(
+            wip=False,
+            failed=result.failed,
+            changed=result.changed,
+        )
+
+        if result.failed or result.changed:
+            result.print_output()
+
+
 class Runner:
     def __init__(self, thing):
         self.thing = thing
+        self.printer = Printer(thing)
 
     def run(self, func, *args, **kwargs):
-        return func(*args, **kwargs)
+        self.printer.print_thing(wip=True)
+
+        try:
+            result = func(*args, **kwargs)
+            self.printer.print_result(result, overwrite=True)
+            return result
+
+        except Exception as error:
+            if isinstance(error, OperationError):
+                logger.warning("Run failed on %s: %r", self.thing, error)
+
+                try:
+                    self.printer.print_result(error.result)
+
+                except Exception:
+                    logger.exception(
+                        "Failed to print exception result at %r", self.thing
+                    )
+
+                echo(style("Operation failed!", fg="red"), file=sys.stderr)
+                sys.exit(1)
+
+            raise
 
 
 def iter_apply(thing, op):
