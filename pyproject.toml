@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "opslib"
+version = "0.0.1"
+description = "A Pythonic toolkit to manage infrastructure."
+authors = ["Alex Morega <alex@grep.ro>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
