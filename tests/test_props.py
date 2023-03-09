@@ -2,7 +2,7 @@ from typing import Optional
 
 import pytest
 
-from opslib.lazy import evaluate, Lazy
+from opslib.lazy import Lazy, evaluate
 from opslib.props import InstanceProps, Prop
 
 

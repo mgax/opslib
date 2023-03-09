@@ -1,7 +1,7 @@
-import os
-import sys
 import logging
+import os
 import subprocess
+import sys
 
 from .results import Result
 

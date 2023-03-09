@@ -1,4 +1,4 @@
-from opslib.lazy import Lazy, lazy_property, evaluate
+from opslib.lazy import Lazy, evaluate, lazy_property
 
 
 def func(*args, **kwargs):

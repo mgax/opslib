@@ -1,6 +1,6 @@
 import beartype.door
 
-from .lazy import evaluate, Lazy
+from .lazy import Lazy, evaluate
 
 NO_DEFAULT = object()
 
