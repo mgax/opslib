@@ -1,7 +1,10 @@
 import sys
+import logging
 import subprocess
 
 from .results import Result
+
+logger = logging.getLogger(__name__)
 
 
 class LocalRunResult(Result):
@@ -25,13 +28,24 @@ class LocalRunResult(Result):
 
 def run(
     *args,
+    input=None,
     capture_output=True,
     encoding="utf8",
     exit=False,
     **kwargs,
 ):
+    if input is None:
+        logger.debug("Running %r", args)
+
+    else:
+        if encoding and isinstance(input, str):
+            input = input.encode("utf8")
+
+        logger.debug("Running %r with input = %r", args, input)
+
     completed = subprocess.run(
         args,
+        input=input,
         capture_output=capture_output,
         **kwargs,
     )

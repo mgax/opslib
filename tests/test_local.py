@@ -56,3 +56,8 @@ def test_exit():
         run("false", exit=True)
 
     assert error.value.code == 1
+
+
+def test_input():
+    result = run("cat", input="hello world\n")
+    assert result.output == "hello world\n"
