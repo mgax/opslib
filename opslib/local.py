@@ -1,3 +1,4 @@
+import os
 import sys
 import logging
 import subprocess
@@ -31,6 +32,7 @@ def run(
     input=None,
     capture_output=True,
     encoding="utf8",
+    extra_env=None,
     exit=False,
     **kwargs,
 ):
@@ -42,6 +44,9 @@ def run(
             input = input.encode("utf8")
 
         logger.debug("Running %r with input = %r", args, input)
+
+    if extra_env:
+        kwargs["env"] = dict(os.environ, **extra_env)
 
     completed = subprocess.run(
         args,

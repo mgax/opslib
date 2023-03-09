@@ -61,3 +61,8 @@ def test_exit():
 def test_input():
     result = run("cat", input="hello world\n")
     assert result.output == "hello world\n"
+
+
+def test_extra_env():
+    result = run("env", extra_env=dict(HELLO="world"))
+    assert "HELLO=world" in result.output.splitlines()
