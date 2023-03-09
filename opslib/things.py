@@ -1,13 +1,37 @@
+from functools import cached_property
+
 from .props import InstanceProps
+
+
+class Meta:
+    def __init__(self, thing, name, parent):
+        self.thing = thing
+        self.name = name
+        self.parent = parent
+
+    @cached_property
+    def full_name(self):
+        if self.parent is None or self.parent._meta.parent is None:
+            return self.name
+
+        return f"{self.parent._meta.full_name}.{self.name}"
 
 
 class Thing:
     class Props:
         pass
 
+    _meta = None
+
     def __init__(self, **kwargs):
         self._children = {}
         self.props = InstanceProps(self, kwargs)
+
+    def __str__(self):
+        return self._meta.full_name if self._meta else "[detached]"
+
+    def __repr__(self):
+        return f"<{type(self).__name__} {self}>"
 
     def __setattr__(self, name, value):
         super().__setattr__(name, value)
@@ -16,11 +40,32 @@ class Thing:
             self._children[name] = value
 
     def _attach(self, parent, name):
+        if self._meta is not None:
+            raise ValueError(
+                f"Cannot attach {self!r} to {parent!r} because it's already attached"
+            )
+
+        self._meta = Meta(
+            thing=self,
+            name=name,
+            parent=parent,
+        )
         if hasattr(self, "build"):
             self.build()
+
+    def __iter__(self):
+        return iter(self._children.values())
 
 
 class Stack(Thing):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.build()
+
+        self._meta = Meta(
+            thing=self,
+            name="__root__",
+            parent=None,
+        )
+
+        if hasattr(self, "build"):
+            self.build()

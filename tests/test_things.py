@@ -1,3 +1,5 @@
+import pytest
+
 from opslib.props import Prop
 from opslib.things import Stack, Thing
 
@@ -49,3 +51,44 @@ def test_setattr_skips_underscore_names():
 
     bench = Bench()
     assert not bench._child.build_called
+
+
+def test_meta_fields():
+    stack = Stack()
+    stack.child = Thing()
+    assert stack.child._meta.thing is stack.child
+    assert stack.child._meta.name == "child"
+    assert stack.child._meta.parent is stack
+
+
+def test_str():
+    stack = Stack()
+    stack.a = Thing()
+    stack.a.b = Thing()
+    assert str(stack.a.b) == "a.b"
+
+
+def test_repr():
+    stack = Stack()
+    stack.a = Thing()
+    stack.a.b = Thing()
+    assert repr(stack.a.b) == "<Thing a.b>"
+
+
+def test_double_attach_fails():
+    stack = Stack()
+    stack.child = Thing()
+
+    with pytest.raises(ValueError) as error:
+        stack.alias = stack.child
+
+    assert error.value.args == (
+        "Cannot attach <Thing child> to <Stack __root__> because it's already attached",
+    )
+
+
+def test_iter():
+    stack = Stack()
+    stack.a = Thing()
+    stack.b = Thing()
+    assert list(stack) == [stack.a, stack.b]
