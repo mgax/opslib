@@ -1,7 +1,7 @@
 import pytest
 from click.testing import CliRunner
 
-from opslib.cli import get_cli
+from opslib.cli import get_cli, get_main_cli
 from opslib.results import Result
 from opslib.things import Stack, Thing
 
@@ -74,3 +74,11 @@ def test_thing_lookup(path, expected):
             run()
 
         assert error.value.args == expected.args
+
+
+def test_main_cli():
+    stack = Stack()
+    stack.a = Thing()
+    cli = get_main_cli(lambda: stack)
+    result = CliRunner().invoke(cli, ["a", "id"], catch_exceptions=False)
+    assert result.output == "<Thing a>\n"
