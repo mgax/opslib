@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+from typing import Optional
 
 from .ansible import AnsibleAction
 from .props import Prop
@@ -33,17 +34,31 @@ class File(Thing):
         host = Prop(BaseHost)
         path = Prop(Path)
         content = Prop(str)
+        mode = Prop(Optional[str])
+        owner = Prop(Optional[str])
+        group = Prop(Optional[str])
 
     def build(self):
+        args = dict(
+            content=self.props.content,
+            dest=str(self.props.path),
+        )
+
+        if self.props.mode:
+            args["mode"] = self.props.mode
+
+        if self.props.owner:
+            args["owner"] = self.props.owner
+
+        if self.props.group:
+            args["group"] = self.props.group
+
         self.action = AnsibleAction(
             hostname=self.props.host.hostname,
             ansible_variables=self.props.host.ansible_variables,
             action=dict(
                 module="ansible.builtin.copy",
-                args=dict(
-                    content=self.props.content,
-                    dest=str(self.props.path),
-                ),
+                args=args,
             ),
         )
 
@@ -52,17 +67,31 @@ class Directory(Thing):
     class Props:
         host = Prop(BaseHost)
         path = Prop(Path)
+        mode = Prop(Optional[str])
+        owner = Prop(Optional[str])
+        group = Prop(Optional[str])
 
     def build(self):
+        args = dict(
+            path=str(self.props.path),
+            state="directory",
+        )
+
+        if self.props.mode:
+            args["mode"] = self.props.mode
+
+        if self.props.owner:
+            args["owner"] = self.props.owner
+
+        if self.props.group:
+            args["group"] = self.props.group
+
         self.action = AnsibleAction(
             hostname=self.props.host.hostname,
             ansible_variables=self.props.host.ansible_variables,
             action=dict(
                 module="ansible.builtin.file",
-                args=dict(
-                    path=str(self.props.path),
-                    state="directory",
-                ),
+                args=args,
             ),
         )
 
