@@ -11,12 +11,13 @@ class Lazy:
     def value(self):
         return self.func(*self.args, **self.kwargs)
 
-    def __call__(self):
-        return self.value
+
+def is_lazy(ob):
+    return isinstance(ob, Lazy)
 
 
 def evaluate(ob):
-    if isinstance(ob, Lazy):
+    if is_lazy(ob):
         return ob.value
 
     if isinstance(ob, dict):
