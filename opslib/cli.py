@@ -3,10 +3,33 @@ import click
 from .operations import apply
 
 
+def lookup(thing, path):
+    for name in path.split("."):
+        if name == "-":
+            continue
+
+        thing = thing._children[name]
+
+    return thing
+
+
 def get_cli(thing):
     @click.group()
     def cli():
         pass
+
+    @cli.command()
+    def id():
+        click.echo(repr(thing))
+
+    @cli.command("thing", context_settings=dict(ignore_unknown_options=True))
+    @click.pass_context
+    @click.argument("path")
+    @click.argument("args", nargs=-1, type=click.UNPROCESSED)
+    def thing_(ctx, path, args):
+        target = lookup(thing, path)
+        target_cli = get_cli(target)
+        target_cli(obj=ctx.obj, args=args)
 
     def register_apply_command(name, *decorators, **defaults):
         @click.pass_context
