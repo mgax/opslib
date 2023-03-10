@@ -4,7 +4,7 @@ import pytest
 
 from opslib.lazy import Lazy
 from opslib.local import run
-from opslib.operations import apply
+from opslib.operations import apply, print_report
 from opslib.props import Prop
 from opslib.results import Result
 from opslib.things import Stack, Thing
@@ -86,5 +86,28 @@ def test_print_direct_output(capfd):
         task DirectOutputTask ...
         hello lazy
         task DirectOutputTask [changed]
+        """
+    )
+
+
+def test_print_report(capsys):
+    stack = Stack()
+    stack.a = Task()
+    stack.b = Task(changed=True)
+    stack.c = Task(failed=True)
+    results = apply(stack, deploy=True)
+    print_report(results)
+    captured = capsys.readouterr()
+    assert captured.out == dedent(
+        """\
+        a Task ...
+        a Task [ok]
+        b Task ...
+        b Task [changed]
+        c Task ...
+        c Task [failed]
+        2 ok
+        1 changed
+        <class 'test_printer.Task'>: 1
         """
     )

@@ -5,7 +5,7 @@ import sys
 
 import click
 
-from .operations import apply
+from .operations import apply, print_report
 
 
 def lookup(thing, path):
@@ -39,7 +39,8 @@ def get_cli(thing):
     def register_apply_command(name, *decorators, **defaults):
         @click.pass_context
         def command(ctx, **kwargs):
-            apply(thing, **defaults, **kwargs)
+            results = apply(thing, **defaults, **kwargs)
+            print_report(results)
 
         for decorator in decorators:
             command = decorator(command)

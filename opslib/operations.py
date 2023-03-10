@@ -1,5 +1,6 @@
 import logging
 import sys
+from collections import defaultdict
 
 from click import echo, style
 
@@ -147,3 +148,21 @@ def iter_apply(thing, op):
 def apply(thing, **kwargs):
     op = Operation(**kwargs)
     return dict(iter_apply(thing, op))
+
+
+def print_report(results):
+    ok_count = len([r for r in results.values() if not r.changed])
+    if ok_count:
+        echo(style(f"{ok_count} ok", fg="green"))
+
+    changed_count = len([r for r in results.values() if r.changed])
+    if changed_count:
+        echo(style(f"{changed_count} changed", fg="yellow"))
+
+        by_type = defaultdict(int)
+        for thing, result in results.items():
+            if result.changed:
+                by_type[type(thing)] += 1
+
+        for cls, number in by_type.items():
+            echo(style(f"{cls}: {number}", dim=True))
