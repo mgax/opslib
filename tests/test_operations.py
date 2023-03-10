@@ -1,3 +1,4 @@
+from opslib.lazy import Lazy
 from opslib.operations import apply
 from opslib.props import Prop
 from opslib.results import Result
@@ -111,3 +112,22 @@ def test_call_destroy_dry_run():
     assert results[stack.two].output == "two"
     assert results[stack.one].output == "one"
     assert results[stack.one.a].output == "one.a"
+
+
+def test_evaluate_lazy_result():
+    called = False
+
+    class Task(Thing):
+        def deploy(self, dry_run=False):
+            def get_result():
+                nonlocal called
+                called = True
+                return Result(output="lay-z")
+
+            return Lazy(get_result)
+
+    stack = Stack()
+    stack.one = Task()
+    results = apply(stack, deploy=True)
+    assert called
+    assert results[stack.one].output == "lay-z"

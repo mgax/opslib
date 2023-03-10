@@ -1,5 +1,8 @@
+from textwrap import dedent
+
 import pytest
 
+from opslib.lazy import Lazy
 from opslib.local import run
 from opslib.operations import apply
 from opslib.props import Prop
@@ -66,3 +69,22 @@ def test_print_error(capsys):
     captured = capsys.readouterr()
     assert captured.out == "task Task ...\ntask Task [failed]\ndont panic\n\n"
     assert captured.err == "Operation failed!\n"
+
+
+def test_print_direct_output(capfd):
+    class DirectOutputTask(Thing):
+        def deploy(self, dry_run=False):
+            return Lazy(run, "echo", "hello lazy", capture_output=False)
+
+    stack = Stack()
+    stack.task = DirectOutputTask()
+    apply(stack, deploy=True)
+
+    captured = capfd.readouterr()
+    assert captured.out == dedent(
+        """\
+        task DirectOutputTask ...
+        hello lazy
+        task DirectOutputTask [changed]
+        """
+    )

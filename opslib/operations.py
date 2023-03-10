@@ -3,6 +3,7 @@ import sys
 
 from click import echo, style
 
+from .lazy import evaluate, is_lazy
 from .results import OperationError
 
 logger = logging.getLogger(__name__)
@@ -71,11 +72,7 @@ class Printer:
         if overwrite:
             echo("\033[F", nl=False)
 
-        self.print_thing(
-            wip=False,
-            failed=result.failed,
-            changed=result.changed,
-        )
+        self.print_thing(failed=result.failed, changed=result.changed)
 
         if result.failed or result.changed:
             result.print_output()
@@ -91,7 +88,15 @@ class Runner:
 
         try:
             result = func(*args, **kwargs)
-            self.printer.print_result(result, overwrite=True)
+
+            if is_lazy(result):
+                overwrite = False
+                result = evaluate(result)
+
+            else:
+                overwrite = True
+
+            self.printer.print_result(result, overwrite=overwrite)
             return result
 
         except Exception as error:
