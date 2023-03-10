@@ -8,7 +8,9 @@ from ansible.playbook.play import Play
 from ansible.plugins.callback import CallbackBase
 from ansible.vars.manager import VariableManager
 
+from .props import Prop
 from .results import Result
+from .things import Thing
 
 logger = logging.getLogger(__name__)
 
@@ -81,3 +83,23 @@ def run_ansible(hostname, ansible_variables, action):
     result = AnsibleResult(stdout_callback.results[-1], stdout_callback.errors)
     result.raise_if_failed("Ansible failed")
     return result
+
+
+class AnsibleAction(Thing):
+    class Props:
+        hostname = Prop(str)
+        ansible_variables = Prop(list)
+        action = Prop(dict)
+
+    def run(self):
+        return run_ansible(
+            hostname=self.props.hostname,
+            ansible_variables=self.props.ansible_variables,
+            action=self.props.action,
+        )
+
+    def deploy(self, dry_run=False):
+        if dry_run:
+            return Result(changed=True)
+
+        return self.run()
