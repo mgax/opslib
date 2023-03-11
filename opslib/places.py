@@ -1,9 +1,13 @@
+import os
 import sys
 from pathlib import Path
 from typing import Optional
 
 from .ansible import AnsibleAction
+from .lazy import Lazy
+from .local import run
 from .props import Prop
+from .results import Result
 from .things import Thing
 
 
@@ -20,6 +24,12 @@ class BaseHost:
             **kwargs,
         )
 
+    def command(self, **kwargs):
+        return Command(
+            host=self,
+            **kwargs,
+        )
+
 
 class LocalHost(BaseHost):
     hostname = "localhost"
@@ -27,6 +37,12 @@ class LocalHost(BaseHost):
         ("ansible_connection", "local"),
         ("ansible_python_interpreter", sys.executable),
     ]
+
+    def run(self, *args, **kwargs):
+        if not args:
+            shell = os.environ.get("SHELL", "sh")
+            args = [shell]
+        return run(*args, **kwargs)
 
 
 class File(Thing):
@@ -107,4 +123,22 @@ class Directory(Thing):
             host=self.props.host,
             path=self.props.path / name,
             **kwargs,
+        )
+
+
+class Command(Thing):
+    class Props:
+        host = Prop(BaseHost)
+        args = Prop(list, default=[])
+        input = Prop(Optional[str])
+
+    def deploy(self, dry_run=False):
+        if dry_run:
+            return Result(changed=True)
+
+        return Lazy(
+            self.props.host.run,
+            *self.props.args,
+            input=self.props.input,
+            capture_output=False,
         )

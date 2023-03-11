@@ -1,3 +1,6 @@
+import shlex
+from textwrap import dedent
+
 import pytest
 
 from opslib.operations import apply
@@ -64,3 +67,33 @@ def test_file_from_directory(tmp_path, local_host):
 
     with (path / "bar").open() as f:
         assert f.read() == "hello bar"
+
+
+def test_command(tmp_path, local_host):
+    path = tmp_path / "foo"
+    stack = Stack()
+    stack.foo = local_host.command(
+        args=["touch", str(path)],
+    )
+
+    apply(stack, deploy=True)
+
+    assert path.is_file()
+
+
+def test_command_with_input(tmp_path, local_host):
+    stack = Stack()
+    stack.foo = local_host.command(
+        input=dedent(
+            f"""\
+            set -euo pipefail
+            set -x
+            cd {shlex.quote(str(tmp_path))}
+            touch foo
+            """
+        ),
+    )
+
+    apply(stack, deploy=True)
+
+    assert (tmp_path / "foo").is_file()
