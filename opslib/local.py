@@ -34,6 +34,7 @@ def run(
     encoding="utf8",
     extra_env=None,
     exit=False,
+    check=True,
     **kwargs,
 ):
     if input is None:
@@ -59,5 +60,7 @@ def run(
         sys.exit(completed.returncode)
 
     result = LocalRunResult(completed, encoding=encoding)
-    result.raise_if_failed("Local command failed")
+    if check:
+        result.raise_if_failed("Local command failed")
+
     return result

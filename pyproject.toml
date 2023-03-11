@@ -26,6 +26,10 @@ filterwarnings = [
   "error",
   "ignore::pytest.PytestUnraisableExceptionWarning",
 ]
+log_level = "DEBUG"
+markers = [
+  "slow: marks tests as slow",
+]
 
 [build-system]
 requires = ["poetry-core"]

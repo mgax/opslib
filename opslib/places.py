@@ -45,6 +45,59 @@ class LocalHost(BaseHost):
         return run(*args, **kwargs)
 
 
+class SshHost(BaseHost):
+    def __init__(
+        self,
+        hostname,
+        username=None,
+        port=None,
+        private_key_file=None,
+        config_file=None,
+        interpreter="python3",
+    ):
+        self.hostname = hostname
+        self.port = port
+        self.username = username
+        self.private_key_file = private_key_file
+        self.config_file = config_file
+        self.ansible_variables = [
+            ("ansible_python_interpreter", interpreter),
+        ]
+
+        if port:
+            self.ansible_variables.append(("ansible_ssh_port", str(port)))
+
+        if username:
+            self.ansible_variables.append(("ansible_user", username))
+
+        if private_key_file:
+            self.ansible_variables.append(
+                ("ansible_ssh_private_key_file", str(private_key_file))
+            )
+
+        if config_file:
+            self.ansible_variables.append(
+                ("ansible_ssh_common_args", f"-F {config_file}"),
+            )
+
+    def run(self, *args, **kwargs):
+        hostname = self.hostname
+        if self.username:
+            hostname = f"{self.username}@{hostname}"
+
+        ssh_args = ["ssh", hostname]
+        if self.port:
+            ssh_args += ["-p", str(self.port)]
+
+        if self.private_key_file:
+            ssh_args += ["-i", str(self.private_key_file)]
+
+        if self.config_file:
+            ssh_args += ["-F", str(self.config_file)]
+
+        return run(*ssh_args, "--", *args, **kwargs)
+
+
 class File(Thing):
     class Props:
         host = Prop(BaseHost)

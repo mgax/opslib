@@ -44,6 +44,6 @@ def test_errors():
     result = error.value.result
     assert result.changed
     assert result.failed
-    assert result.output == "dont panic"
+    assert result.output == "non-zero return code\ndont panic"
     assert result.stdout == ""
     assert result.stderr == "dont panic"

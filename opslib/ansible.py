@@ -1,8 +1,10 @@
 import logging
 from warnings import warn
 
+from ansible import context
 from ansible.executor.task_queue_manager import TaskQueueManager
 from ansible.inventory.manager import InventoryManager
+from ansible.module_utils.common.collections import ImmutableDict
 from ansible.parsing.dataloader import DataLoader
 from ansible.playbook.play import Play
 from ansible.plugins.callback import CallbackBase
@@ -35,19 +37,34 @@ class StdoutCallback(CallbackBase):
 class AnsibleResult(Result):
     def __init__(self, data, failed):
         self.data = data
+        self.exception = data.get("exception", "")
+        if self.exception:
+            self.exception += "\n"
+        self.msg = data.get("msg", "")
+        if self.msg:
+            self.msg += "\n"
         self.stdout = data.get("stdout", "")
         self.stderr = data.get("stderr", "")
+
+        output = self.msg + self.exception + self.stderr + self.stdout
+
         for warning in data.get("warnings", []):
             warn(warning)
 
         super().__init__(
             changed=bool(data.get("changed")),
-            output=self.stderr + self.stdout,
+            output=output,
             failed=failed,
         )
 
 
 def run_ansible(hostname, ansible_variables, action):
+    context.CLIARGS = ImmutableDict(
+        connection="smart",
+        check=False,
+        diff=True,
+    )
+
     loader = DataLoader()
     inventory = InventoryManager(loader=loader, sources=f"{hostname},")
     variable_manager = VariableManager(loader=loader, inventory=inventory)
