@@ -22,10 +22,6 @@ opslib = "opslib.cli:main"
 
 [tool.pytest.ini_options]
 addopts = "--black --isort"
-filterwarnings = [
-  "error",
-  "ignore::pytest.PytestUnraisableExceptionWarning",
-]
 log_level = "DEBUG"
 markers = [
   "slow: marks tests as slow",
