@@ -10,6 +10,7 @@ from ansible.playbook.play import Play
 from ansible.plugins.callback import CallbackBase
 from ansible.vars.manager import VariableManager
 
+from .lazy import evaluate
 from .props import Prop
 from .results import Result
 from .things import Thing
@@ -115,7 +116,7 @@ class AnsibleAction(Thing):
             ansible_variables=self.props.ansible_variables,
             action=dict(
                 module=self.props.module,
-                args=self.props.args,
+                args=evaluate(self.props.args),
             ),
         )
 

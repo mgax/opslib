@@ -109,7 +109,7 @@ class File(Thing):
     class Props:
         host = Prop(BaseHost)
         path = Prop(Path)
-        content = Prop(str)
+        content = Prop(str, lazy=True)
         mode = Prop(Optional[str])
         owner = Prop(Optional[str])
         group = Prop(Optional[str])

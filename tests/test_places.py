@@ -3,6 +3,7 @@ from textwrap import dedent
 
 import pytest
 
+from opslib.lazy import Lazy
 from opslib.operations import apply
 from opslib.places import LocalHost
 from opslib.things import Stack
@@ -25,6 +26,29 @@ def test_file_from_path(tmp_path, local_host):
 
     with path.open() as f:
         assert f.read() == "hello foo"
+
+
+def test_file_lazy_content(tmp_path, local_host):
+    path = tmp_path / "foo.txt"
+    called = False
+
+    def get_content():
+        nonlocal called
+        called = True
+        return "hello world"
+
+    stack = Stack()
+    stack.foo = local_host.file(
+        path=path,
+        content=Lazy(get_content),
+    )
+
+    assert not called
+    apply(stack, deploy=True)
+    assert called
+
+    with path.open() as f:
+        assert f.read() == "hello world"
 
 
 def test_directory_from_path(tmp_path, local_host):
