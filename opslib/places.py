@@ -186,6 +186,9 @@ class Directory(Thing):
             **kwargs,
         )
 
+    def __truediv__(self, name):
+        return self.subdir(name)
+
     def file(self, name, **kwargs):
         return File(
             host=self.host,

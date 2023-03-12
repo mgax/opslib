@@ -52,6 +52,19 @@ def test_subdir(tmp_path, local_host):
     assert (path / "bar").is_dir()
 
 
+def test_truediv(tmp_path, local_host):
+    path = tmp_path / "foo"
+    stack = Stack()
+    stack.foo = local_host.directory(
+        path=path,
+    )
+    stack.bar = stack.foo / "bar"
+
+    apply(stack, deploy=True)
+
+    assert (path / "bar").is_dir()
+
+
 def test_file_from_directory(tmp_path, local_host):
     path = tmp_path / "foo.txt"
     stack = Stack()
