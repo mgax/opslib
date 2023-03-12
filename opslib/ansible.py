@@ -1,4 +1,6 @@
 import logging
+from collections.abc import Callable
+from typing import Optional
 from warnings import warn
 
 from ansible import context
@@ -59,11 +61,12 @@ class AnsibleResult(Result):
         )
 
 
-def run_ansible(hostname, ansible_variables, action):
+def run_ansible(hostname, ansible_variables, action, check=False):
     context.CLIARGS = ImmutableDict(
         connection="smart",
-        check=False,
+        check=check,
         diff=True,
+        verbosity=0,
     )
 
     loader = DataLoader()
@@ -109,19 +112,21 @@ class AnsibleAction(Thing):
         ansible_variables = Prop(list)
         module = Prop(str)
         args = Prop(dict)
+        format_output = Prop(Optional[Callable])
 
-    def run(self):
-        return run_ansible(
+    def run(self, check=False):
+        result = run_ansible(
             hostname=self.props.hostname,
             ansible_variables=self.props.ansible_variables,
             action=dict(
                 module=self.props.module,
                 args=evaluate(self.props.args),
             ),
+            check=check,
         )
+        if self.props.format_output:
+            result.output = self.props.format_output(result)
+        return result
 
     def deploy(self, dry_run=False):
-        if dry_run:
-            return Result(changed=True)
-
-        return self.run()
+        return self.run(check=dry_run)

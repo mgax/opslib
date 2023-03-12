@@ -10,6 +10,7 @@ from .local import run
 from .props import Prop
 from .results import Result
 from .things import Thing
+from .utils import diff
 
 
 class BaseHost:
@@ -162,7 +163,16 @@ class File(Thing):
         self.action = self.host.ansible_action(
             module="ansible.builtin.copy",
             args=args,
+            format_output=self.format_output,
         )
+
+    def format_output(self, result):
+        if result.changed:
+            return "".join(
+                diff(self.path, d["before"], d["after"]) for d in result.data["diff"]
+            )
+
+        return ""
 
 
 class Directory(Thing):

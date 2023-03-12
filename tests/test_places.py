@@ -144,3 +144,36 @@ def test_command_with_input(tmp_path, local_host):
     apply(stack, deploy=True)
 
     assert (tmp_path / "foo").is_file()
+
+
+def test_file_diff(tmp_path, local_host, capsys):
+    foo_path = tmp_path / "foo.txt"
+    with foo_path.open("w") as f:
+        f.write("hello\nworld\n")
+
+    stack = Stack()
+    stack.foo = local_host.file(
+        path=foo_path,
+        content="hello\nthere\n",
+    )
+
+    apply(stack, deploy=True, dry_run=True)
+
+    captured = capsys.readouterr()
+    assert captured.out == dedent(
+        f"""\
+        foo.action AnsibleAction ...
+        foo.action AnsibleAction [changed]
+        --- {foo_path}
+        +++ {foo_path}
+        @@ -1,2 +1,2 @@
+         hello
+        -world
+        +there
+
+        """
+    )
+    assert captured.err == ""
+
+    with foo_path.open() as f:
+        assert f.read() == "hello\nworld\n", "Target file must not change"

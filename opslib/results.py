@@ -1,3 +1,6 @@
+from click import echo
+
+
 class OperationError(Exception):
     def __init__(self, *args, result):
         assert result.failed
@@ -23,4 +26,4 @@ class Result:
 
     def print_output(self):
         if self.output:
-            print(self.output)
+            echo(self.output)
