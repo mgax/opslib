@@ -10,6 +10,10 @@ from .results import OperationError
 logger = logging.getLogger(__name__)
 
 
+class AbortOperation(RuntimeError):
+    pass
+
+
 class Operation:
     FLAGS = [
         "dry_run",
@@ -113,7 +117,7 @@ class Runner:
                     )
 
                 echo(style("Operation failed!", fg="red"), file=sys.stderr)
-                sys.exit(1)
+                raise AbortOperation()
 
             raise
 

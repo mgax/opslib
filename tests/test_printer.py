@@ -4,7 +4,7 @@ import pytest
 
 from opslib.lazy import Lazy
 from opslib.local import run
-from opslib.operations import apply, print_report
+from opslib.operations import AbortOperation, apply, print_report
 from opslib.props import Prop
 from opslib.results import Result
 from opslib.things import Stack, Thing
@@ -63,7 +63,7 @@ def test_print_error(capsys):
     stack = Stack()
     stack.task = Task(exception=True)
 
-    with pytest.raises(SystemExit):
+    with pytest.raises(AbortOperation):
         apply(stack, deploy=True)
 
     captured = capsys.readouterr()
