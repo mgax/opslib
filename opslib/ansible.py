@@ -106,13 +106,17 @@ class AnsibleAction(Thing):
     class Props:
         hostname = Prop(str)
         ansible_variables = Prop(list)
-        action = Prop(dict)
+        module = Prop(str)
+        args = Prop(dict)
 
     def run(self):
         return run_ansible(
             hostname=self.props.hostname,
             ansible_variables=self.props.ansible_variables,
-            action=self.props.action,
+            action=dict(
+                module=self.props.module,
+                args=self.props.args,
+            ),
         )
 
     def deploy(self, dry_run=False):

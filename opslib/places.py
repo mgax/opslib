@@ -30,6 +30,13 @@ class BaseHost:
             **kwargs,
         )
 
+    def ansible_action(self, **kwargs):
+        return AnsibleAction(
+            hostname=self.hostname,
+            ansible_variables=self.ansible_variables,
+            **kwargs,
+        )
+
 
 class LocalHost(BaseHost):
     hostname = "localhost"
@@ -107,10 +114,18 @@ class File(Thing):
         owner = Prop(Optional[str])
         group = Prop(Optional[str])
 
+    @property
+    def host(self):
+        return self.props.host
+
+    @property
+    def path(self):
+        return self.props.path
+
     def build(self):
         args = dict(
             content=self.props.content,
-            dest=str(self.props.path),
+            dest=str(self.path),
         )
 
         if self.props.mode:
@@ -122,13 +137,9 @@ class File(Thing):
         if self.props.group:
             args["group"] = self.props.group
 
-        self.action = AnsibleAction(
-            hostname=self.props.host.hostname,
-            ansible_variables=self.props.host.ansible_variables,
-            action=dict(
-                module="ansible.builtin.copy",
-                args=args,
-            ),
+        self.action = self.host.ansible_action(
+            module="ansible.builtin.copy",
+            args=args,
         )
 
 
@@ -140,9 +151,17 @@ class Directory(Thing):
         owner = Prop(Optional[str])
         group = Prop(Optional[str])
 
+    @property
+    def host(self):
+        return self.props.host
+
+    @property
+    def path(self):
+        return self.props.path
+
     def build(self):
         args = dict(
-            path=str(self.props.path),
+            path=str(self.path),
             state="directory",
         )
 
@@ -155,26 +174,22 @@ class Directory(Thing):
         if self.props.group:
             args["group"] = self.props.group
 
-        self.action = AnsibleAction(
-            hostname=self.props.host.hostname,
-            ansible_variables=self.props.host.ansible_variables,
-            action=dict(
-                module="ansible.builtin.file",
-                args=args,
-            ),
+        self.action = self.host.ansible_action(
+            module="ansible.builtin.file",
+            args=args,
         )
 
     def subdir(self, name, **kwargs):
         return Directory(
-            host=self.props.host,
-            path=self.props.path / name,
+            host=self.host,
+            path=self.path / name,
             **kwargs,
         )
 
     def file(self, name, **kwargs):
         return File(
-            host=self.props.host,
-            path=self.props.path / name,
+            host=self.host,
+            path=self.path / name,
             **kwargs,
         )
 
@@ -185,12 +200,16 @@ class Command(Thing):
         args = Prop(list, default=[])
         input = Prop(Optional[str])
 
+    @property
+    def host(self):
+        return self.props.host
+
     def deploy(self, dry_run=False):
         if dry_run:
             return Result(changed=True)
 
         return Lazy(
-            self.props.host.run,
+            self.host.run,
             *self.props.args,
             input=self.props.input,
             capture_output=False,
