@@ -2,8 +2,11 @@ import sys
 
 import pytest
 
-from opslib.ansible import run_ansible
+from opslib.ansible import AnsibleAction, run_ansible
+from opslib.operations import apply
+from opslib.places import LocalHost
 from opslib.results import OperationError
+from opslib.things import Stack
 
 
 def run_local_ansible(action):
@@ -47,3 +50,20 @@ def test_errors():
     assert result.output == "non-zero return code\ndont panic"
     assert result.stdout == ""
     assert result.stderr == "dont panic"
+
+
+def test_ansible_action(tmp_path):
+    foo_path = tmp_path / "foo"
+    stack = Stack()
+    host = LocalHost()
+    stack.action = AnsibleAction(
+        hostname=host.hostname,
+        ansible_variables=host.ansible_variables,
+        module="ansible.builtin.file",
+        args=dict(
+            path=str(foo_path),
+            state="directory",
+        ),
+    )
+    apply(stack, deploy=True)
+    assert foo_path.is_dir()
