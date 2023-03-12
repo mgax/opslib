@@ -63,6 +63,16 @@ def test_directory_from_path(tmp_path, local_host):
     assert path.is_dir()
 
 
+def test_directory_from_string_path(tmp_path, local_host):
+    path = tmp_path / "foo"
+    stack = Stack()
+    stack.foo = local_host.directory(str(path))
+
+    apply(stack, deploy=True)
+
+    assert path.is_dir()
+
+
 def test_subdir(tmp_path, local_host):
     path = tmp_path / "foo"
     stack = Stack()

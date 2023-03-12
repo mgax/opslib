@@ -2,7 +2,7 @@ import os
 import sys
 from copy import copy
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 from .ansible import AnsibleAction
 from .lazy import Lazy
@@ -21,9 +21,10 @@ class BaseHost:
             **kwargs,
         )
 
-    def directory(self, **kwargs):
+    def directory(self, path, **kwargs):
         return Directory(
             host=self,
+            path=Path(path),
             **kwargs,
         )
 
@@ -221,7 +222,7 @@ class Directory(Thing):
 class Command(Thing):
     class Props:
         host = Prop(BaseHost)
-        args = Prop(list, default=[])
+        args = Prop(Union[list, tuple], default=[])
         input = Prop(Optional[str])
 
     @property
