@@ -1,5 +1,6 @@
 FROM alpine
-RUN apk add openssh-server python3
+RUN apk add openssh-server python3 sudo
+RUN echo "opslib ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/opslib
 RUN sed -ie 's/#Port 22/Port 22/g' /etc/ssh/sshd_config
 RUN adduser -D opslib
 RUN passwd -u opslib

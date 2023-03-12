@@ -1,5 +1,6 @@
 import os
 import sys
+from copy import copy
 from pathlib import Path
 from typing import Optional
 
@@ -12,6 +13,8 @@ from .things import Thing
 
 
 class BaseHost:
+    with_sudo = False
+
     def file(self, **kwargs):
         return File(
             host=self,
@@ -36,6 +39,17 @@ class BaseHost:
             ansible_variables=self.ansible_variables,
             **kwargs,
         )
+
+    def sudo(self):
+        rv = copy(self)
+        rv.with_sudo = True
+        rv.ansible_variables = [
+            *rv.ansible_variables,
+            ("ansible_become", "yes"),
+            ("ansible_become_method", "sudo"),
+            ("ansible_become_user", "root"),
+        ]
+        return rv
 
 
 class LocalHost(BaseHost):
@@ -102,7 +116,14 @@ class SshHost(BaseHost):
         if self.config_file:
             ssh_args += ["-F", str(self.config_file)]
 
-        return run(*ssh_args, "--", *args, **kwargs)
+        ssh_args.append("--")
+
+        if self.with_sudo:
+            ssh_args.append("sudo")
+            if not args:
+                args = ["-i"]
+
+        return run(*ssh_args, *args, **kwargs)
 
 
 class File(Thing):
