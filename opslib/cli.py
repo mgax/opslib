@@ -27,6 +27,11 @@ def get_cli(thing):
     def id():
         click.echo(repr(thing))
 
+    @cli.command()
+    def ls():
+        for child in thing:
+            click.echo(f"{child._meta.name}: {child!r}")
+
     @cli.command("thing", context_settings=dict(ignore_unknown_options=True))
     @click.pass_context
     @click.argument("path")

@@ -97,3 +97,12 @@ def test_thing_add_cli():
     cli = get_main_cli(lambda: stack)
     result = CliRunner().invoke(cli, ["a", "speak"], catch_exceptions=False)
     assert result.output == "Hello from <CommandingThing a>\n"
+
+
+def test_ls():
+    stack = Stack()
+    stack.a = Thing()
+    stack.b = Thing()
+    cli = get_main_cli(lambda: stack)
+    result = CliRunner().invoke(cli, ["-", "ls"], catch_exceptions=False)
+    assert result.output == "a: <Thing a>\nb: <Thing b>\n"
