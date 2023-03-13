@@ -63,6 +63,8 @@ def get_cli(thing):
         destroy=True,
     )
 
+    thing.add_commands(cli)
+
     return cli
 
 

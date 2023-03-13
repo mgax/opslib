@@ -1,4 +1,5 @@
 import pytest
+from click import echo
 from click.testing import CliRunner
 
 from opslib.cli import get_cli, get_main_cli
@@ -82,3 +83,17 @@ def test_main_cli():
     cli = get_main_cli(lambda: stack)
     result = CliRunner().invoke(cli, ["a", "id"], catch_exceptions=False)
     assert result.output == "<Thing a>\n"
+
+
+def test_thing_add_cli():
+    class CommandingThing(Thing):
+        def add_commands(self, cli):
+            @cli.command()
+            def speak():
+                echo(f"Hello from {self!r}")
+
+    stack = Stack()
+    stack.a = CommandingThing()
+    cli = get_main_cli(lambda: stack)
+    result = CliRunner().invoke(cli, ["a", "speak"], catch_exceptions=False)
+    assert result.output == "Hello from <CommandingThing a>\n"

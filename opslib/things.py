@@ -56,6 +56,9 @@ class Thing:
     def build(self):
         pass
 
+    def add_commands(self, cli):
+        pass
+
 
 class Stack(Thing):
     def __init__(self, **kwargs):
