@@ -1,3 +1,7 @@
+import sys
+from pathlib import Path
+from textwrap import dedent
+
 import pytest
 
 from opslib.local import run
@@ -66,3 +70,35 @@ def test_input():
 def test_extra_env():
     result = run("env", extra_env=dict(HELLO="world"))
     assert "HELLO=world" in result.output.splitlines()
+
+
+def test_exec():
+    repo_path = Path(__file__).parent.parent
+    input = dedent(
+        """\
+        from opslib.local import run
+        run("echo", "hello", "world", exec=True)
+        print("this does not get printed")
+        """
+    )
+    result = run(sys.executable, input=input, cwd=repo_path)
+    assert result.output == "hello world\n"
+
+
+def test_exec_env():
+    repo_path = Path(__file__).parent.parent
+    input = dedent(
+        """\
+        from opslib.local import run
+        run(
+            "bash",
+            "-c",
+            "echo $ENV_MESSAGE",
+            extra_env=dict(ENV_MESSAGE="hello world"),
+            exec=True,
+        )
+        print("this does not get printed")
+        """
+    )
+    result = run(sys.executable, input=input, cwd=repo_path)
+    assert result.output == "hello world\n"

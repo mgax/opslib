@@ -35,6 +35,7 @@ def run(
     extra_env=None,
     exit=False,
     check=True,
+    exec=False,
     **kwargs,
 ):
     if input is None:
@@ -48,6 +49,10 @@ def run(
 
     if extra_env:
         kwargs["env"] = dict(os.environ, **extra_env)
+
+    if exec:
+        env = dict(os.environ, **(extra_env or {}))
+        os.execvpe(args[0], args, env)
 
     completed = subprocess.run(
         args,
