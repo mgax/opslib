@@ -6,7 +6,7 @@ from opslib.ansible import AnsibleAction, run_ansible
 from opslib.operations import apply
 from opslib.places import LocalHost
 from opslib.results import OperationError
-from opslib.things import Stack
+from opslib.things import init_statedir
 
 
 def run_local_ansible(action):
@@ -52,7 +52,7 @@ def test_errors():
     assert result.stderr == "dont panic"
 
 
-def test_ansible_action(tmp_path):
+def test_ansible_action(tmp_path, Stack):
     foo_path = tmp_path / "foo"
     stack = Stack()
     host = LocalHost()
@@ -65,5 +65,6 @@ def test_ansible_action(tmp_path):
             state="directory",
         ),
     )
+    init_statedir(stack)
     apply(stack, deploy=True)
     assert foo_path.is_dir()

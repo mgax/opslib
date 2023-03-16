@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from opslib.operations import apply
-from opslib.things import Stack
+from opslib.things import init_statedir
 
 
 @pytest.mark.slow
@@ -15,13 +15,14 @@ def test_ssh_run(docker_ssh):
 
 
 @pytest.mark.slow
-def test_ansible_ssh(docker_ssh):
+def test_ansible_ssh(docker_ssh, Stack):
     stack = Stack()
     stack.foo = docker_ssh.file(
         path=Path("/tmp/foo.txt"),
         content="hello world",
     )
 
+    init_statedir(stack)
     apply(stack, deploy=True)
 
     assert docker_ssh.run("cat /tmp/foo.txt").stdout == "hello world"
@@ -44,13 +45,14 @@ def test_run_sudo_with_input(docker_ssh):
 
 
 @pytest.mark.slow
-def test_ansible_sudo(docker_ssh):
+def test_ansible_sudo(docker_ssh, Stack):
     stack = Stack()
     stack.foo = docker_ssh.sudo().file(
         path=Path("/tmp/foo.txt"),
         content="hello world",
     )
 
+    init_statedir(stack)
     apply(stack, deploy=True)
 
     assert docker_ssh.run("stat -c %U /tmp/foo.txt").stdout == "root\n"

@@ -16,6 +16,7 @@ from .lazy import evaluate
 from .props import Prop
 from .results import Result
 from .things import Thing
+from .uptodate import UpToDate
 
 logger = logging.getLogger(__name__)
 
@@ -114,19 +115,31 @@ class AnsibleAction(Thing):
         args = Prop(dict)
         format_output = Prop(Optional[Callable])
 
+    uptodate = UpToDate()
+
+    @property
+    @uptodate.snapshot
+    def action(self):
+        return dict(
+            module=self.props.module,
+            args=evaluate(self.props.args),
+        )
+
     def run(self, check=False):
         result = run_ansible(
             hostname=self.props.hostname,
             ansible_variables=self.props.ansible_variables,
-            action=dict(
-                module=self.props.module,
-                args=evaluate(self.props.args),
-            ),
+            action=self.action,
             check=check,
         )
         if self.props.format_output:
             result.output = self.props.format_output(result)
         return result
 
+    @uptodate.refresh
+    def refresh(self):
+        return self.run(check=True)
+
+    @uptodate.deploy
     def deploy(self, dry_run=False):
         return self.run(check=dry_run)
