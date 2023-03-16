@@ -104,3 +104,27 @@ def pytest_collection_modifyitems(config, items):
         if "slow" in item.keywords:
             if not config.getoption("--runslow"):
                 item.add_marker(pytest.mark.skip(reason="need --runslow option to run"))
+
+
+@pytest.fixture(autouse=True)
+def no_statedir_outside_tmp_path(tmp_path, monkeypatch):
+    from opslib import state
+
+    original_init = state.ThingStateDirectory.init
+
+    def mock_init(self):
+        assert self._prefix.is_relative_to(tmp_path), "No statedir outside tmp"
+        original_init(self)
+
+    monkeypatch.setattr(state.ThingStateDirectory, "init", mock_init)
+
+
+@pytest.fixture
+def Stack(tmp_path):
+    from opslib.things import Stack
+
+    class TestingStack(Stack):
+        def get_state_directory(self):
+            return tmp_path / "statedir"
+
+    return TestingStack

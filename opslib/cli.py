@@ -6,6 +6,7 @@ import sys
 import click
 
 from .operations import apply, print_report
+from .things import init_statedir
 
 
 def lookup(thing, path):
@@ -22,6 +23,10 @@ def get_cli(thing):
     @click.group()
     def cli():
         pass
+
+    @cli.command("init")
+    def init():
+        init_statedir(thing)
 
     @cli.command()
     def id():

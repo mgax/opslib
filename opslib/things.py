@@ -1,9 +1,15 @@
+import logging
 from functools import cached_property
 
 from .props import InstanceProps
+from .state import StateDirectory, default_state_directory
+
+logger = logging.getLogger(__name__)
 
 
 class Meta:
+    statedir = StateDirectory()
+
     def __init__(self, thing, name, parent):
         self.thing = thing
         self.name = name
@@ -65,3 +71,17 @@ class Stack(Thing):
         super().__init__(**kwargs)
         self._meta = self.Meta(thing=self, name="__root__", parent=None)
         self.build()
+
+    def get_state_directory(self):
+        return default_state_directory(self)
+
+
+def walk(thing):
+    yield thing
+    for child in thing:
+        yield from walk(child)
+
+
+def init_statedir(stack):
+    for thing in walk(stack):
+        thing._meta.statedir.init()
