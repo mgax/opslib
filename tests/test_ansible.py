@@ -68,3 +68,16 @@ def test_ansible_action(tmp_path, Stack):
     init_statedir(stack)
     apply(stack, deploy=True)
     assert foo_path.is_dir()
+
+
+@pytest.mark.parametrize("op", [dict(refresh=True), dict(deploy=True, dry_run=True)])
+def test_check_not_supported(Stack, op):
+    stack = Stack()
+    stack.action = LocalHost().ansible_action(
+        module="ansible.builtin.shell",
+        args=dict(cmd="echo hello world"),
+    )
+
+    init_statedir(stack)
+    results = apply(stack, **op)
+    assert results[stack.action].changed

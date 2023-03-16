@@ -102,6 +102,10 @@ def run_ansible(hostname, ansible_variables, action, check=False):
         task_queue_manager.cleanup()
         loader.cleanup_all_tmp_files()
 
+    if check and not stdout_callback.results:
+        # XXX the module likely doesn't support "check" mode
+        return Result(changed=True)
+
     result = AnsibleResult(stdout_callback.results[-1], stdout_callback.errors)
     result.raise_if_failed("Ansible failed")
     return result
