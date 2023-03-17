@@ -37,7 +37,13 @@ def get_cli(thing):
         for child in thing:
             click.echo(f"{child._meta.name}: {child!r}")
 
-    @cli.command("thing", context_settings=dict(ignore_unknown_options=True))
+    @cli.command(
+        "thing",
+        context_settings=dict(
+            ignore_unknown_options=True,
+            allow_interspersed_args=False,
+        ),
+    )
     @click.pass_context
     @click.argument("path")
     @click.argument("args", nargs=-1, type=click.UNPROCESSED)
@@ -79,7 +85,12 @@ def get_cli(thing):
 
 
 def get_main_cli(get_stack):
-    @click.command(context_settings=dict(ignore_unknown_options=True))
+    @click.command(
+        context_settings=dict(
+            ignore_unknown_options=True,
+            allow_interspersed_args=False,
+        )
+    )
     @click.option("-d", "--debug", is_flag=True)
     @click.argument("args", nargs=-1, type=click.UNPROCESSED)
     def cli(debug, args):

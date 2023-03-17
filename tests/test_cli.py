@@ -106,3 +106,10 @@ def test_ls():
     cli = get_main_cli(lambda: stack)
     result = CliRunner().invoke(cli, ["-", "ls"], catch_exceptions=False)
     assert result.output == "a: <Thing a>\nb: <Thing b>\n"
+
+
+def test_show_subcommands():
+    stack = Stack()
+    cli = get_main_cli(lambda: stack)
+    result = CliRunner().invoke(cli, ["-", "--help"], catch_exceptions=False)
+    assert "Commands:" in result.output
