@@ -136,7 +136,7 @@ class AnsibleAction(Thing):
             action=self.action,
             check=check,
         )
-        if self.props.format_output:
+        if result.changed and self.props.format_output:
             result.output = self.props.format_output(result)
         return result
 
