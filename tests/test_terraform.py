@@ -1,7 +1,9 @@
 from pathlib import Path
 
 import pytest
+from click.testing import CliRunner
 
+from opslib.cli import get_main_cli
 from opslib.operations import apply
 from opslib.props import Prop
 from opslib.terraform import TerraformProvider
@@ -43,3 +45,14 @@ def test_deploy(Bench, tmp_path):
 
     results = apply(stack, deploy=True)
     assert not results[stack.file].changed
+
+
+def test_cli(Bench, tmp_path, capfd):
+    path = tmp_path / "hello.txt"
+    stack = Bench(path=path)
+    init_statedir(stack)
+    cli = get_main_cli(lambda: stack)
+    capfd.readouterr()
+    CliRunner().invoke(cli, ["file", "terraform", "plan"], catch_exceptions=False)
+    captured = capfd.readouterr()
+    assert "Terraform will perform the following actions:" in captured.out

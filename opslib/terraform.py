@@ -1,6 +1,8 @@
 import json
 from functools import cached_property
 
+import click
+
 from .local import run
 from .props import Prop
 from .results import Result
@@ -86,3 +88,14 @@ class TerraformResource(Thing):
 
     def deploy(self, dry_run=False):
         return TerraformResult(self.run("apply", "-refresh=false", "-auto-approve"))
+
+    def add_commands(self, cli):
+        @cli.command(
+            context_settings=dict(
+                ignore_unknown_options=True,
+                allow_interspersed_args=False,
+            )
+        )
+        @click.argument("args", nargs=-1, type=click.UNPROCESSED)
+        def terraform(args):
+            self.run(*args, capture_output=False, exit=True)
