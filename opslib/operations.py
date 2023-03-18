@@ -26,7 +26,7 @@ class Operation:
         self.results = {}
         for flag in self.FLAGS:
             setattr(self, flag, kwargs.pop(flag, False))
-        assert not kwargs
+        assert not kwargs, f"Unknown flags: {list(kwargs)}"
 
     def __str__(self):
         return ", ".join(

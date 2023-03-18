@@ -1,4 +1,5 @@
 import json
+import os
 from functools import cached_property
 
 import click
@@ -28,6 +29,10 @@ class TerraformProvider(Thing):
         name = Prop(str)
         source = Prop(str)
         version = Prop(str)
+
+    @cached_property
+    def plugin_cache_path(self):
+        return self._meta.statedir.path / "plugin-cache"
 
     @cached_property
     def config(self):
@@ -60,13 +65,13 @@ class TerraformResource(Thing):
         return self._meta.statedir.path / "terraform"
 
     def _run(self, *args, **kwargs):
-        return run(
-            "terraform",
-            *args,
-            **kwargs,
-            cwd=self.tf_path,
-            extra_env={"TF_IN_AUTOMATION": "true"},
-        )
+        extra_env = {"TF_IN_AUTOMATION": "true"}
+        if not os.environ.get("TF_PLUGIN_CACHE_DIR"):
+            extra_env["TF_PLUGIN_CACHE_DIR"] = str(
+                self.props.provider.plugin_cache_path
+            )
+
+        return run("terraform", *args, **kwargs, cwd=self.tf_path, extra_env=extra_env)
 
     def _init(self):
         self.tf_path.mkdir(exist_ok=True, mode=0o700)

@@ -56,3 +56,25 @@ def test_cli(Bench, tmp_path, capfd):
     CliRunner().invoke(cli, ["file", "terraform", "plan"], catch_exceptions=False)
     captured = capfd.readouterr()
     assert "Terraform will perform the following actions:" in captured.out
+
+
+def test_no_global_plugin_cache(Bench, tmp_path, monkeypatch):
+    monkeypatch.delenv("TF_PLUGIN_CACHE_DIR", raising=False)
+    path = tmp_path / "hello.txt"
+    stack = Bench(path=path)
+    init_statedir(stack)
+    apply(stack, deploy=True)
+
+    [version] = (
+        stack.file.tf_path
+        / ".terraform/providers/registry.terraform.io/hashicorp/local"
+    ).iterdir()
+    [arch] = version.iterdir()
+    assert arch.is_symlink()
+
+    assert arch.readlink() == (
+        stack.provider.plugin_cache_path
+        / "registry.terraform.io/hashicorp/local"
+        / version.name
+        / arch.name
+    )
