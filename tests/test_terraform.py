@@ -46,6 +46,18 @@ def test_deploy(local_stack):
     assert not results[stack.file].changed
 
 
+def test_diff(local_stack, capsys):
+    stack = local_stack()
+    results = apply(stack, deploy=True, dry_run=True)
+    assert not stack.path.exists()
+    captured = capsys.readouterr()
+    assert results[stack.file].changed
+    assert "# local_file.thing will be created" in captured.out
+    assert '+ resource "local_file" "thing"' in captured.out
+    assert '+ content              = "world"' in captured.out
+    assert f'+ filename             = "{stack.path}"' in captured.out
+
+
 def test_cli(local_stack, capfd):
     cli = get_main_cli(local_stack)
     capfd.readouterr()

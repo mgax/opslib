@@ -104,7 +104,8 @@ class TerraformResource(Thing):
         return self._run(*args, **kwargs)
 
     def deploy(self, dry_run=False):
-        return TerraformResult(self.run("apply", "-refresh=false", "-auto-approve"))
+        args = ["plan"] if dry_run else ["apply", "-auto-approve"]
+        return TerraformResult(self.run(*args, "-refresh=false"))
 
     @cached_property
     def _output_values(self):
