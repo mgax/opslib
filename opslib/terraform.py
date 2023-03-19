@@ -5,7 +5,7 @@ from typing import Optional
 
 import click
 
-from .lazy import Lazy
+from .lazy import Lazy, evaluate
 from .local import run
 from .props import Prop
 from .results import Result
@@ -58,7 +58,7 @@ class TerraformProvider(Thing):
 
 class TerraformResource(Thing):
     class Props:
-        provider = Prop(TerraformProvider)
+        provider = Prop(Optional[TerraformProvider])
         type = Prop(str)
         body = Prop(dict)
         output = Prop(Optional[list])
@@ -69,20 +69,20 @@ class TerraformResource(Thing):
 
     def _run(self, *args, **kwargs):
         extra_env = {"TF_IN_AUTOMATION": "true"}
-        if not os.environ.get("TF_PLUGIN_CACHE_DIR"):
-            extra_env["TF_PLUGIN_CACHE_DIR"] = str(
-                self.props.provider.plugin_cache_path
-            )
+        provider = self.props.provider
+        if provider and not os.environ.get("TF_PLUGIN_CACHE_DIR"):
+            extra_env["TF_PLUGIN_CACHE_DIR"] = str(provider.plugin_cache_path)
 
         return run("terraform", *args, **kwargs, cwd=self.tf_path, extra_env=extra_env)
 
     def _init(self):
         self.tf_path.mkdir(exist_ok=True, mode=0o700)
+        provider = self.props.provider
         config = dict(
-            self.props.provider.config,
+            provider.config if provider else {},
             resource={
                 self.props.type: {
-                    "thing": self.props.body,
+                    "thing": evaluate(self.props.body),
                 },
             },
         )
@@ -109,6 +109,9 @@ class TerraformResource(Thing):
     def deploy(self, dry_run=False):
         args = ["plan"] if dry_run else ["apply", "-auto-approve"]
         return TerraformResult(self.run(*args, "-refresh=false"))
+
+    def import_resource(self, resource_id):
+        return self.run("import", f"{self.props.type}.thing", evaluate(resource_id))
 
     @cached_property
     def _output_values(self):

@@ -6,7 +6,7 @@ from click.testing import CliRunner
 from opslib.cli import get_main_cli
 from opslib.lazy import evaluate
 from opslib.operations import apply
-from opslib.terraform import TerraformProvider
+from opslib.terraform import TerraformProvider, TerraformResource
 from opslib.things import init_statedir
 
 
@@ -100,3 +100,16 @@ def test_output(local_stack):
     stack = local_stack(output=["content_sha256"])
     apply(stack, deploy=True)
     assert evaluate(stack.file.output["content_sha256"]) == sha256(b"world").hexdigest()
+
+
+def test_import_resource(Stack):
+    stack = Stack()
+    stack.time = TerraformResource(
+        type="time_static",
+        body={},
+        output=["id"],
+    )
+    init_statedir(stack)
+    value = "2020-02-12T06:36:13Z"
+    stack.time.import_resource(value)
+    assert evaluate(stack.time.output["id"]) == value
