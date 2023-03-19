@@ -30,7 +30,8 @@ class TerraformProvider(Thing):
     class Props:
         name = Prop(str)
         source = Prop(str)
-        version = Prop(str)
+        version = Prop(Optional[str])
+        config = Prop(Optional[dict])
 
     @cached_property
     def plugin_cache_path(self):
@@ -38,16 +39,24 @@ class TerraformProvider(Thing):
 
     @cached_property
     def config(self):
-        return dict(
+        provider_body = dict(
+            source=self.props.source,
+        )
+        if self.props.version:
+            provider_body["version"] = self.props.version
+
+        config = dict(
             terraform=dict(
                 required_providers={
-                    self.props.name: {
-                        "source": self.props.source,
-                        "version": self.props.version,
-                    },
+                    self.props.name: provider_body,
                 },
             ),
         )
+
+        if self.props.config:
+            config["provider"] = {self.props.name: self.props.config}
+
+        return config
 
     def resource(self, **props):
         return TerraformResource(

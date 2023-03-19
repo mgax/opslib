@@ -1,3 +1,4 @@
+import json
 from hashlib import sha256
 
 import pytest
@@ -113,3 +114,25 @@ def test_import_resource(Stack):
     value = "2020-02-12T06:36:13Z"
     stack.time.import_resource(value)
     assert evaluate(stack.time.output["id"]) == value
+
+
+def test_provider_config(Stack, tmp_path):
+    stack = Stack()
+    stack.provider = TerraformProvider(
+        name="tfcoremock",
+        source="tfcoremock",
+        config=dict(
+            resource_directory="opslib_resource_directory",
+        ),
+    )
+    stack.resource = stack.provider.resource(
+        type="tfcoremock_simple_resource",
+        body=dict(
+            number=13,
+        ),
+    )
+    init_statedir(stack)
+    apply(stack, deploy=True)
+    # XXX for some reason, Terraform quotes our directory name
+    [outfile] = (stack.resource.tf_path / '"opslib_resource_directory"').iterdir()
+    assert json.loads(outfile.read_text())["values"]["number"]["number"] == "13"
