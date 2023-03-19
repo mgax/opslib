@@ -1,7 +1,10 @@
+from hashlib import sha256
+
 import pytest
 from click.testing import CliRunner
 
 from opslib.cli import get_main_cli
+from opslib.lazy import evaluate
 from opslib.operations import apply
 from opslib.terraform import TerraformProvider
 from opslib.things import init_statedir
@@ -69,3 +72,9 @@ def test_no_global_plugin_cache(local_stack, monkeypatch):
         / version.name
         / arch.name
     )
+
+
+def test_output(local_stack):
+    stack = local_stack(output=["content_sha256"])
+    apply(stack, deploy=True)
+    assert evaluate(stack.file.output["content_sha256"]) == sha256(b"world").hexdigest()

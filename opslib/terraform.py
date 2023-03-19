@@ -1,9 +1,11 @@
 import json
 import os
 from functools import cached_property
+from typing import Optional
 
 import click
 
+from .lazy import Lazy
 from .local import run
 from .props import Prop
 from .results import Result
@@ -59,6 +61,7 @@ class TerraformResource(Thing):
         provider = Prop(TerraformProvider)
         type = Prop(str)
         body = Prop(dict)
+        output = Prop(Optional[list])
 
     @cached_property
     def tf_path(self):
@@ -83,6 +86,15 @@ class TerraformResource(Thing):
                 },
             },
         )
+        if self.props.output:
+            config["output"] = {
+                key: {
+                    "value": f"${{{self.props.type}.thing.{key}}}",
+                    "sensitive": True,
+                }
+                for key in self.props.output
+            }
+
         (self.tf_path / "main.tf.json").write_text(json.dumps(config, indent=2))
         self._run("init")  # XXX not concurrency safe
         self._init = lambda: None
@@ -93,6 +105,17 @@ class TerraformResource(Thing):
 
     def deploy(self, dry_run=False):
         return TerraformResult(self.run("apply", "-refresh=false", "-auto-approve"))
+
+    @cached_property
+    def _output_values(self):
+        return json.loads(self.run("output", "-json").stdout)
+
+    @cached_property
+    def output(self):
+        def lazy_output(name):
+            return Lazy(lambda: self._output_values[name]["value"])
+
+        return {name: lazy_output(name) for name in self.props.output}
 
     def add_commands(self, cli):
         @cli.command(
