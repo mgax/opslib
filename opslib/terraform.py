@@ -103,6 +103,9 @@ class TerraformResource(Thing):
         self._init()
         return self._run(*args, **kwargs)
 
+    def refresh(self):
+        return TerraformResult(self.run("refresh"))
+
     def deploy(self, dry_run=False):
         args = ["plan"] if dry_run else ["apply", "-auto-approve"]
         return TerraformResult(self.run(*args, "-refresh=false"))

@@ -58,6 +58,16 @@ def test_diff(local_stack, capsys):
     assert f'+ filename             = "{stack.path}"' in captured.out
 
 
+@pytest.mark.parametrize("different", [True, False])
+def test_refresh(local_stack, different):
+    stack = local_stack()
+    apply(stack, deploy=True)
+    stack.path.write_text("different" if different else "world")
+    apply(stack, refresh=True)
+    results = apply(stack, deploy=True, dry_run=True)
+    assert results[stack.file].changed == different
+
+
 def test_cli(local_stack, capfd):
     cli = get_main_cli(local_stack)
     capfd.readouterr()
