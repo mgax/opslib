@@ -22,6 +22,10 @@ class Meta:
 
         return f"{self.parent._meta.full_name}.{self.name}"
 
+    @cached_property
+    def stack(self):
+        return self.component if self.parent is None else self.parent._meta.stack
+
 
 class Component:
     class Props:
