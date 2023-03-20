@@ -50,10 +50,15 @@ class Component:
         return f"<{type(self).__name__} {self}>"
 
     def __setattr__(self, name, value):
-        super().__setattr__(name, value)
         if not name.startswith("_") and isinstance(value, Component):
+            if hasattr(self, name) and name not in self._children:
+                raise AttributeError(f"{self!r} already has attribute {name!r}")
+            super().__setattr__(name, value)
             value._attach(self, name)
             self._children[name] = value
+
+        else:
+            super().__setattr__(name, value)
 
     def _attach(self, parent, name):
         if self._meta is not None:

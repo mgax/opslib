@@ -53,6 +53,14 @@ def test_setattr_skips_underscore_names():
     assert not bench._child.build_called
 
 
+def test_setattr_warns_against_overriding_the_api():
+    stack = Stack()
+    with pytest.raises(AttributeError) as error:
+        stack.build = Component()
+
+    assert error.value.args == ("<Stack __root__> already has attribute 'build'",)
+
+
 def test_meta_fields():
     stack = Stack()
     stack.child = Component()
