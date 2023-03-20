@@ -20,13 +20,19 @@ class ComponentStateDirectory:
         self._path = self._prefix / "_statedir"
 
     def init(self):
+        changed = False
+
         if not self._prefix.exists():
             logger.debug("ComponentState init %s", self._prefix)
             self._prefix.mkdir(mode=0o700)
+            changed = True
 
         if not self._path.exists():
             logger.debug("ComponentState init %s", self._path)
             self._path.mkdir(mode=0o700)
+            changed = True
+
+        return changed
 
     @cached_property
     def path(self):

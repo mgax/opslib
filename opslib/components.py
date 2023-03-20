@@ -87,5 +87,9 @@ def walk(component):
 
 
 def init_statedir(stack):
+    from .operations import Printer
+
     for component in walk(stack):
-        component._meta.statedir.init()
+        changed = component._meta.statedir.init()
+        if changed:
+            Printer(component).print_component(changed=True)
