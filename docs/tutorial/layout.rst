@@ -53,3 +53,5 @@ This stack runs a single command which prints a message. Let's deploy it:
 
 Lines 1 and 3 show us which thing is being deployed. Line 2 is the command's
 output. The last two lines are a summary of what happened.
+
+Continue to :doc:`local`.
