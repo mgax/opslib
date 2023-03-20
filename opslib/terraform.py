@@ -10,6 +10,7 @@ from .local import run
 from .props import Prop
 from .results import Result
 from .things import Thing
+from .uptodate import UpToDate
 
 
 class TerraformResult(Result):
@@ -72,9 +73,35 @@ class TerraformResource(Thing):
         body = Prop(dict)
         output = Prop(Optional[list])
 
+    uptodate = UpToDate()
+
     @cached_property
     def tf_path(self):
         return self._meta.statedir.path / "terraform"
+
+    @property
+    @uptodate.snapshot
+    def config(self):
+        provider = self.props.provider
+        config = dict(
+            provider.config if provider else {},
+            resource={
+                self.props.type: {
+                    "thing": evaluate(self.props.body),
+                },
+            },
+        )
+
+        if self.props.output:
+            config["output"] = {
+                key: {
+                    "value": f"${{{self.props.type}.thing.{key}}}",
+                    "sensitive": True,
+                }
+                for key in self.props.output
+            }
+
+        return config
 
     def _run(self, *args, **kwargs):
         extra_env = {"TF_IN_AUTOMATION": "true"}
@@ -86,35 +113,21 @@ class TerraformResource(Thing):
 
     def _init(self):
         self.tf_path.mkdir(exist_ok=True, mode=0o700)
-        provider = self.props.provider
-        config = dict(
-            provider.config if provider else {},
-            resource={
-                self.props.type: {
-                    "thing": evaluate(self.props.body),
-                },
-            },
-        )
-        if self.props.output:
-            config["output"] = {
-                key: {
-                    "value": f"${{{self.props.type}.thing.{key}}}",
-                    "sensitive": True,
-                }
-                for key in self.props.output
-            }
-
-        (self.tf_path / "main.tf.json").write_text(json.dumps(config, indent=2))
-        self._run("init")  # XXX not concurrency safe
+        (self.tf_path / "main.tf.json").write_text(json.dumps(self.config, indent=2))
+        self._run("init", "-upgrade")  # XXX not concurrency safe
         self._init = lambda: None
 
-    def run(self, *args, **kwargs):
-        self._init()
+    def run(self, *args, terraform_init=True, **kwargs):
+        if terraform_init:
+            self._init()
         return self._run(*args, **kwargs)
 
+    @uptodate.refresh
     def refresh(self):
-        return TerraformResult(self.run("refresh"))
+        self.run("refresh")
+        return TerraformResult(self.run("plan"))
 
+    @uptodate.deploy
     def deploy(self, dry_run=False):
         args = ["plan"] if dry_run else ["apply", "-auto-approve"]
         return TerraformResult(self.run(*args, "-refresh=false"))
@@ -124,7 +137,7 @@ class TerraformResource(Thing):
 
     @cached_property
     def _output_values(self):
-        return json.loads(self.run("output", "-json").stdout)
+        return json.loads(self.run("output", "-json", terraform_init=False).stdout)
 
     @cached_property
     def output(self):
