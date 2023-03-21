@@ -71,3 +71,24 @@ def test_lazy_property_wrong_type():
         evaluate(bench.props.material)
 
     assert error.value.args == ("Lazy prop 'material': 13 is not <class 'str'>",)
+
+
+def test_remainder():
+    class Bench:
+        class Props:
+            a = Prop(int)
+            b = Prop(int)
+            z = Prop.remainder
+
+        def __init__(self, **kwargs):
+            self.props = InstanceProps(type(self), kwargs)
+
+    bench = Bench(a=1, b=2, c=3, d=4)
+    assert bench.props.a == 1
+    assert bench.props.b == 2
+    assert bench.props.z == dict(c=3, d=4)
+
+    with pytest.raises(TypeError) as error:
+        evaluate(Bench(a=1))
+
+    assert error.value.args == ("Required prop 'b' is missing",)

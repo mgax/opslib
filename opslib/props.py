@@ -6,6 +6,8 @@ NO_DEFAULT = object()
 
 
 class Prop:
+    remainder = object()
+
     def __init__(self, type, default=NO_DEFAULT, lazy=False):
         self.type = type
         self.default = default
@@ -28,8 +30,11 @@ class Prop:
 
 class InstanceProps:
     def __init__(self, cls, kwargs):
-        for name in dir(cls.Props):
-            prop = getattr(cls.Props, name)
+        for name, prop in cls.Props.__dict__.items():
+            if prop is Prop.remainder:
+                setattr(self, name, kwargs)
+                return
+
             if not isinstance(prop, Prop):
                 continue
 
