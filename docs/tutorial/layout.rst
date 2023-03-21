@@ -14,7 +14,7 @@ Set up a virtualenv and install opslib:
 
     $ python3 -m venv .venv
     $ source .venv/bin/activate
-    $ pip install pip install git+https://github.com/mgax/opslib
+    $ pip install git+https://github.com/mgax/opslib
 
 ---
 

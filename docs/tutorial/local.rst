@@ -2,22 +2,19 @@ Local Deployment
 ================
 
 Time to actually deploy something! Here we create a docker-compose
-configuration for Gitea and start it locally.
+configuration for Gitea and deploy it locally.
 
 Adding Gitea to the stack
 -------------------------
 
-Docker-compose needs a directory for its configuration file; we'll create a
-subdirectory in our project named ``localgitea``.
+First we generate a ``docker-compose.yml`` file, along with its project
+directory, and a data volume.
 
 .. code-block:: python
     :caption: ``stack.py``
 
     from pathlib import Path
-    from shlex import quote
-    from textwrap import dedent
 
-    import click
     import yaml
     from opslib.places import Directory, LocalHost
     from opslib.props import Prop
@@ -32,7 +29,14 @@ subdirectory in our project named ``localgitea``.
             self.directory = self.props.directory
             self.data_volume = self.directory / "data"
 
-            compose_content = dict(
+            self.compose_file = self.directory.file(
+                name="docker-compose.yml",
+                content=self.compose_file_content,
+            )
+
+        @property
+        def compose_file_content(self):
+            content = dict(
                 version="3",
                 services=dict(
                     app=dict(
@@ -47,33 +51,7 @@ subdirectory in our project named ``localgitea``.
                     ),
                 ),
             )
-
-            self.compose_file = self.directory.file(
-                name="docker-compose.yml",
-                content=yaml.dump(compose_content, sort_keys=False),
-            )
-
-            self.compose_up = self.directory.host.command(
-                input=dedent(
-                    f"""
-                    set -xeuo pipefail
-                    cd {quote(str(self.directory.path))}
-                    docker compose up -d
-                    """
-                ),
-            )
-
-        def add_commands(self, cli):
-            @cli.command(context_settings=dict(ignore_unknown_options=True))
-            @click.argument("args", nargs=-1, type=click.UNPROCESSED)
-            def compose(args):
-                cwd = quote(str(self.directory.path))
-                argv = ' '.join(quote(arg) for arg in args)
-                self.directory.host.run(
-                    input=f"set -x; cd {cwd} && docker compose {argv}",
-                    capture_output=False,
-                    exit=True,
-                )
+            return yaml.dump(content, sort_keys=False)
 
 
     class MyCodeForge(Stack):
@@ -114,21 +92,6 @@ unchanged when we'll want to deploy to a remote host over SSH.
 By setting the ``Directory`` things ``self.directory`` and ``self.data_volume``
 on the ``Gitea`` instance, we attach them to our stack, which ensures the
 directories will be created.
-
-Each ``Directory`` has a ``host`` property which is a reference to its parent
-host. The host has a ``run`` method, which is a thin wrapper around
-``subprocess.run``. It will normally capture output and wrap the result in an
-object, suitable for the deployment machinery. But we can run commands
-interactively, by disabling ``capture_output``, and setting ``exit=True``,
-which makes Python exit with the same code as the command that was run, and
-avoids generating a stack trace on error.
-
-Commands
-^^^^^^^^
-
-Besides opslib's builtin CLI commands, we can define our own, by implementing
-``add_commands``. We define the ``compose`` command which will run any ``docker
-compose`` subcommand in the compose directory.
 
 Deploying the Stack
 -------------------
@@ -174,10 +137,8 @@ dry-run first. The ``diff`` command will show what is going to change:
     +    ports:
     +    - 127.0.0.1:3000:3000
 
-    gitea.compose_up Command [changed]
-    4 changed
+    3 changed
     <class 'opslib.ansible.AnsibleAction'>: 3
-    <class 'opslib.places.Command'>: 1
 
 Actually deploying
 ^^^^^^^^^^^^^^^^^^
@@ -188,20 +149,124 @@ Now for the real deal:
 
     $ opslib - diff
 
-The output should be simiar to ``diff``, but with more feedback from the
-``gitea.compose_up`` command, which will download the Gitea image and start it.
+The output will be simiar to ``diff``, and will create a file named
+``localgitea/docker-compose.yml``.
 
-You can now open http://localhost:3000 in your browser and finish the Gitea
-installation by scrolling to the bottom and clicking "Install Gitea". Then
-click on "Need an account? Register now."; the first account will be an admin.
+Running Commands
+----------------
 
-Looking at the logs
-^^^^^^^^^^^^^^^^^^^
+Each ``Directory`` has a ``host`` property which is a reference to its parent
+host. The host has a ``run`` method, which is a thin wrapper around
+``subprocess.run``. Let's add a command to the end of the ``build`` method of
+``Gitea`` that runs ``docker compose up -d``:
+
+.. code-block:: python
+    :caption: ``stack.py``
+
+    class Gitea(Thing):
+        # ...
+
+        def build(self):
+            # ...
+
+            self.compose_up = self.directory.host.command(
+                args=[*self.compose_args, "up", "-d"],
+            )
+
+        @property
+        def compose_args(self):
+            return [
+                "docker", "compose", "--project-directory", self.directory.path
+            ]
+
+Then run ``diff`` again:
+
+.. code-block:: none
+
+    $ opslib - diff
+    gitea.directory.action AnsibleAction [ok]
+    gitea.data_volume.action AnsibleAction [ok]
+    gitea.compose_file.action AnsibleAction [ok]
+    gitea.compose_up Command [changed]
+    3 ok
+    1 changed
+    <class 'opslib.places.Command'>: 1
+
+The first 3 items are directories and files that we've deployed previously, and
+they have not changed, so they show up as ``[ok]``. The command, however, will
+be run.
+
+.. code-block:: none
+
+    $ opslib - deploy
+    gitea.directory.action AnsibleAction [ok]
+    gitea.data_volume.action AnsibleAction [ok]
+    gitea.compose_file.action AnsibleAction [ok]
+    gitea.compose_up Command ...
+    [+] Running 2/2
+     ⠿ Network localgitea_default  Created                                                                            0.0s
+     ⠿ Container localgitea-app-1  Started                                                                            0.2s
+    gitea.compose_up Command [changed]
+    3 ok
+    1 changed
+    <class 'opslib.places.Command'>: 1
+
+If all goes well, Docker will start the gitea container. You can now open
+http://localhost:3000 in your browser and finish the Gitea installation by
+scrolling to the bottom and clicking "Install Gitea". Then click on "Need an
+account? Register now."; the first account will be an admin.
+
+Custom Commands
+^^^^^^^^^^^^^^^
+
+Besides opslib's builtin CLI commands, we can define our own, by implementing
+``add_commands``. We define the ``compose`` command, such named because Click
+picks up the command name from the function name; it will run any ``docker
+compose`` subcommand we ask it.
+
+The host's ``run`` method will normally capture output and wrap the result in
+an object, suitable for the deployment machinery. But we can run commands
+interactively, by disabling ``capture_output``. We also set ``exit=True``,
+which makes Python exit with the same code as the command that was run, and
+does not generate a stack trace on error.
+
+.. code-block:: python
+    :caption: ``stack.py``
+
+    import click
+    # ...
+
+    class Gitea(Thing):
+        # ...
+
+        def add_commands(self, cli):
+            @cli.command(context_settings=dict(ignore_unknown_options=True))
+            @click.argument("args", nargs=-1, type=click.UNPROCESSED)
+            def compose(args):
+                """ Run `docker compose` with the given arguments """
+                self.directory.host.run(
+                    *[*self.compose_args, *args],
+                    capture_output=False,
+                    exit=True,
+                )
 
 You'll notice that all the commands so far had ``-`` as first argument. It
-means "the stack". In fact, the argument is a dotted path in the stack
-hierarchy, and can reference any Thing in our stack. Let's call our custom
-``compose`` command and give it the ``logs`` subcommand of ``docker compose``:
+means "the root stack object". In fact, the argument is a dotted path in the
+stack hierarchy, and can reference any Thing in our stack.
+
+.. code-block:: none
+
+    $ opslib gitea compose --help
+    Usage: opslib compose [OPTIONS] [ARGS]...
+
+      Run `docker compose` with the given arguments
+
+    Options:
+      --help  Show this message and exit.
+
+
+Let's call our ``compose`` command and give it the ``logs`` subcommand of
+``docker compose``:
 
 .. code-block:: none
 
@@ -212,6 +277,5 @@ hierarchy, and can reference any Thing in our stack. Let's call our custom
     localgitea-app-1  | 2023/03/20 17:25:56 cmd/web.go:224:listen() [I] [64189724] AppURL(ROOT_URL): http://localhost:3000/
     localgitea-app-1  | 2023/03/20 17:25:56 ...s/graceful/server.go:62:NewServer() [I] [64189724] Starting new Web server: tcp:0.0.0.0:3000 on PID: 18
 
-As you can see in the first two lines, first the command changes directory to
-the compose directory, and then runs ``docker compose``, followed by our ``logs
---tail=3`` subcommand.
+This is quite a powerful way of interacting with our deployed resources,
+without explicitly shelling into remote hosts, changing directories, etc.
