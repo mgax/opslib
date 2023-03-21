@@ -16,6 +16,7 @@ directory, and a data volume.
     from pathlib import Path
 
     import yaml
+
     from opslib.places import Directory, LocalHost
     from opslib.props import Prop
     from opslib.things import Stack, Thing
@@ -175,9 +176,7 @@ host. The host has a ``run`` method, which is a thin wrapper around
 
         @property
         def compose_args(self):
-            return [
-                "docker", "compose", "--project-directory", self.directory.path
-            ]
+            return ["docker", "compose", "--project-directory", self.directory.path]
 
 Then run ``diff`` again:
 
@@ -243,7 +242,7 @@ does not generate a stack trace on error.
             @cli.command(context_settings=dict(ignore_unknown_options=True))
             @click.argument("args", nargs=-1, type=click.UNPROCESSED)
             def compose(args):
-                """ Run `docker compose` with the given arguments """
+                """Run `docker compose` with the given arguments"""
                 self.directory.host.run(
                     *[*self.compose_args, *args],
                     capture_output=False,
