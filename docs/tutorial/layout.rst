@@ -35,7 +35,7 @@ project directory. Time to install opslib:
 
 .. code-block:: none
 
-    $ pip install git+https://github.com/mgax/opslib
+    $ pip install pyopslib
 
 Any opslib project contains a *stack* which describes the infrastructure. By
 default, opslib tries to import the ``stack`` module or package, and expects a
