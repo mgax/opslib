@@ -5,7 +5,7 @@ import pytest
 from click.testing import CliRunner
 
 from opslib.cli import get_main_cli
-from opslib.lazy import evaluate
+from opslib.lazy import NotAvailable, evaluate
 from opslib.operations import apply
 from opslib.terraform import TerraformProvider, TerraformResource
 from opslib.things import init_statedir
@@ -101,6 +101,29 @@ def test_output(local_stack):
     stack = local_stack(output=["content_sha256"])
     apply(stack, deploy=True)
     assert evaluate(stack.file.output["content_sha256"]) == sha256(b"world").hexdigest()
+
+
+def test_output_not_available(Stack):
+    stack = Stack()
+    stack.provider = TerraformProvider(
+        name="consul",
+    )
+    stack.order = stack.provider.resource(
+        type="consul_service",
+        body=dict(
+            name="foo",
+            node="bar",
+        ),
+        output=["service_id"],
+    )
+    init_statedir(stack)
+    apply(stack, refresh=True)
+    with pytest.raises(NotAvailable) as error:
+        print(evaluate(stack.order.output["service_id"]))
+
+    assert error.value.args == (
+        "<TerraformResource order>: output 'service_id' not available",
+    )
 
 
 def test_import_resource(Stack):

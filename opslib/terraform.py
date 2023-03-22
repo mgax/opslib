@@ -5,7 +5,7 @@ from typing import Optional
 
 import click
 
-from .lazy import Lazy, evaluate
+from .lazy import Lazy, NotAvailable, evaluate
 from .local import run
 from .props import Prop
 from .results import Result
@@ -29,7 +29,7 @@ class TerraformResult(Result):
 class TerraformProvider(Thing):
     class Props:
         name = Prop(str)
-        source = Prop(str)
+        source = Prop(Optional[str])
         version = Prop(Optional[str])
         config = Prop(Optional[dict])
 
@@ -39,9 +39,9 @@ class TerraformProvider(Thing):
 
     @cached_property
     def config(self):
-        provider_body = dict(
-            source=self.props.source,
-        )
+        provider_body = dict()
+        if self.props.source:
+            provider_body["source"] = self.props.source
         if self.props.version:
             provider_body["version"] = self.props.version
 
@@ -129,7 +129,16 @@ class TerraformResource(Thing):
     @cached_property
     def output(self):
         def lazy_output(name):
-            return Lazy(lambda: self._output_values[name]["value"])
+            def get_value():
+                try:
+                    output = self._output_values[name]
+
+                except KeyError:
+                    raise NotAvailable(f"{self!r}: output {name!r} not available")
+
+                return output["value"]
+
+            return Lazy(get_value)
 
         return {name: lazy_output(name) for name in self.props.output}
 

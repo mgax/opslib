@@ -106,8 +106,9 @@ def test_print_report(capsys):
         b Task [changed]
         c Task ...
         c Task [failed]
-        2 ok
+        1 ok
         1 changed
-        <class 'test_printer.Task'>: 1
+        1 failed
+        <class 'test_printer.Task'>: 2
         """
     )

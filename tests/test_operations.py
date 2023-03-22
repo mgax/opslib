@@ -1,4 +1,4 @@
-from opslib.lazy import Lazy
+from opslib.lazy import Lazy, NotAvailable
 from opslib.operations import apply
 from opslib.props import Prop
 from opslib.results import Result
@@ -131,3 +131,16 @@ def test_evaluate_lazy_result():
     results = apply(stack, deploy=True)
     assert called
     assert results[stack.one].output == "lay-z"
+
+
+def test_not_available(capsys):
+    class Task(Thing):
+        def deploy(self, dry_run=False):
+            raise NotAvailable("Something is not quite ready yet")
+
+    stack = Stack()
+    stack.one = Task()
+    results = apply(stack, deploy=True)
+    assert results[stack.one].failed
+    captured = capsys.readouterr()
+    assert "one Task [failed]\nSomething is not quite ready yet\n" in captured.out

@@ -4,8 +4,8 @@ from collections import defaultdict
 
 from click import echo, style
 
-from .lazy import evaluate, is_lazy
-from .results import OperationError
+from .lazy import NotAvailable, evaluate, is_lazy
+from .results import OperationError, Result
 
 logger = logging.getLogger(__name__)
 
@@ -104,6 +104,11 @@ class Runner:
             self.printer.print_result(result, overwrite=overwrite)
             return result
 
+        except NotAvailable as error:
+            result = Result(failed=True, output=error.args[0])
+            self.printer.print_result(result)
+            return result
+
         except Exception as error:
             if isinstance(error, OperationError):
                 logger.warning("Run failed on %s: %r", self.thing, error)
@@ -155,17 +160,22 @@ def apply(thing, **kwargs):
 
 
 def print_report(results):
-    ok_count = len([r for r in results.values() if not r.changed])
+    ok_count = len([r for r in results.values() if not (r.changed or r.failed)])
     if ok_count:
         echo(style(f"{ok_count} ok", fg="green"))
 
     changed_count = len([r for r in results.values() if r.changed])
+    failed_count = len([r for r in results.values() if r.failed])
     if changed_count:
         echo(style(f"{changed_count} changed", fg="yellow"))
 
+    if failed_count:
+        echo(style(f"{failed_count} failed", fg="red"))
+
+    if changed_count or failed_count:
         by_type = defaultdict(int)
         for thing, result in results.items():
-            if result.changed:
+            if result.changed or result.failed:
                 by_type[type(thing)] += 1
 
         for cls, number in by_type.items():

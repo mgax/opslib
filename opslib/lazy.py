@@ -1,6 +1,10 @@
 from functools import cached_property, wraps
 
 
+class NotAvailable(KeyError):
+    """Value is not available at this time"""
+
+
 class Lazy:
     def __init__(self, func, *args, **kwargs):
         self.func = func
