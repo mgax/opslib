@@ -1,4 +1,4 @@
 /.envrc
 /.venv
-/.opslib
-/localgitea
+/target
+/stack/.opslib

@@ -16,18 +16,24 @@ Set up a virtualenv and install opslib:
     $ source .venv/bin/activate
     $ pip install git+https://github.com/mgax/opslib
 
----
+Any opslib project contains a *stack* which describes the infrastructure. By
+default, opslib tries to import the ``stack`` module or package, and expects a
+``get_stack`` factory function.
 
-Any opslib project contains a Stack which describes the infrastructure. By
-default, opslib looks for a file named ``stack.py``, with a ``get_stack``
-factory function inside:
+Our project will be spread over several Python files so we'll organise them in
+a package:
+
+.. code-block:: none
+
+    $ mkdir stack
+
+Let's create a simple stack in the package's ``__init__.py`` file:
 
 .. code-block:: python
-    :caption: ``stack.py``
+    :caption: ``stack/__init__.py``
 
     from opslib.places import LocalHost
     from opslib.things import Stack
-
 
     class MyCodeForge(Stack):
         def build(self):
@@ -35,7 +41,6 @@ factory function inside:
             self.speak = host.command(
                 args=["echo", "Hello World!"],
             )
-
 
     def get_stack():
         return MyCodeForge()

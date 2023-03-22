@@ -7,24 +7,26 @@ configuration for Gitea and deploy it locally.
 Adding Gitea to the stack
 -------------------------
 
+The Gitea definition is big enough to warrant its own Python file which will be
+``stack/gitea.py``.
+
 First we generate a ``docker-compose.yml`` file, along with its project
 directory, and a data volume.
 
 .. code-block:: python
-    :caption: ``stack.py``
-
-    from pathlib import Path
+    :caption: ``stack/gitea.py``
 
     import yaml
 
-    from opslib.places import Directory, LocalHost
+    from opslib.places import Directory
     from opslib.props import Prop
-    from opslib.things import Stack, Thing
+    from opslib.things import Thing
 
 
     class Gitea(Thing):
         class Props:
             directory = Prop(Directory)
+            listen = Prop(str)
 
         def build(self):
             self.directory = self.props.directory
@@ -47,23 +49,32 @@ directory, and a data volume.
                         ],
                         restart="unless-stopped",
                         ports=[
-                            "127.0.0.1:3000:3000",
+                            f"{self.props.listen}:3000",
                         ],
                     ),
                 ),
             )
             return yaml.dump(content, sort_keys=False)
 
+Then, in ``stack/__init__.py``, we import and instantiate it:
+
+.. code-block:: python
+    :caption: ``stack/__init__.py``
+
+    from pathlib import Path
+    from opslib.places import LocalHost
+    from opslib.things import Stack
+    from .gitea import Gitea
 
     class MyCodeForge(Stack):
         def build(self):
             host = LocalHost()
-            repo = host.directory(Path(__file__).parent)
-
+            target_path = Path(__file__).parent.parent / "target"
+            self.directory = host.directory(target_path)
             self.gitea = Gitea(
-                directory=repo / "localgitea",
+                directory=self.directory / "gitea",
+                listen="3000",
             )
-
 
     def get_stack():
         return MyCodeForge()
@@ -90,9 +101,9 @@ Hosts, directories and files are the bread and butter of deployment. Here we
 use ``LocalHost`` because we're deploying locally, but the same code will work
 unchanged when we'll want to deploy to a remote host over SSH.
 
-By setting the ``Directory`` things ``self.directory`` and ``self.data_volume``
-on the ``Gitea`` instance, we attach them to our stack, which ensures the
-directories will be created.
+By setting the ``Directory`` objects ``self.directory`` and
+``self.data_volume`` on the ``Gitea`` instance, we attach them to our stack,
+which ensures the directories will be created.
 
 Deploying the Stack
 -------------------
@@ -105,8 +116,8 @@ First, we must run the ``init`` command, to initialize the opslib state.
 
 It will create a subdirectory named ``.opslib`` in our project where it will
 keep track, among other things, of which things got deployed successfully. It's
-useful to assume files don't change by themselves after we write them so that
-the deployment process is quick.
+useful to assume that files don't change by themselves after we write them, so
+that we skip them, and the deployment process is quicker.
 
 .. note::
 
@@ -116,8 +127,8 @@ the deployment process is quick.
 Dry-run deployment aka diff
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Before making changes to sensitive infrastructure, it's a good idea to run a
-dry-run first. The ``diff`` command will show what is going to change:
+Before making changes to sensitive infrastructure, it's a good idea to first
+perform a dry-run. The ``diff`` command will show what is going to change:
 
 .. code-block:: none
 
@@ -125,15 +136,15 @@ dry-run first. The ``diff`` command will show what is going to change:
     gitea.directory.action AnsibleAction [changed]
     gitea.data_volume.action AnsibleAction [changed]
     gitea.compose_file.action AnsibleAction [changed]
-    --- /opt/prj/demo/my-code-forge/localgitea/docker-compose.yml
-    +++ /opt/prj/demo/my-code-forge/localgitea/docker-compose.yml
+    --- /opt/prj/opslib/examples/tutorial/target/gitea/docker-compose.yml
+    +++ /opt/prj/opslib/examples/tutorial/target/gitea/docker-compose.yml
     @@ -0,0 +1,9 @@
     +version: '3'
     +services:
     +  app:
     +    image: gitea/gitea:1.19.0
     +    volumes:
-    +    - /opt/prj/demo/my-code-forge/localgitea/data:/data
+    +    - /opt/prj/opslib/examples/tutorial/target/gitea/data:/data
     +    restart: unless-stopped
     +    ports:
     +    - 127.0.0.1:3000:3000
@@ -150,8 +161,8 @@ Now for the real deal:
 
     $ opslib - diff
 
-The output will be simiar to ``diff``, and will create a file named
-``localgitea/docker-compose.yml``.
+The output will be simiar to ``diff``, and will create the compose project in
+``target/gitea``.
 
 Running Commands
 ----------------
@@ -162,7 +173,7 @@ host. The host has a ``run`` method, which is a thin wrapper around
 ``Gitea`` that runs ``docker compose up -d``:
 
 .. code-block:: python
-    :caption: ``stack.py``
+    :caption: ``stack/gitea.py``
 
     class Gitea(Thing):
         # ...
@@ -203,17 +214,15 @@ be run.
     gitea.compose_file.action AnsibleAction [ok]
     gitea.compose_up Command ...
     [+] Running 2/2
-     ⠿ Network localgitea_default  Created                                                                            0.0s
-     ⠿ Container localgitea-app-1  Started                                                                            0.2s
+     ⠿ Network gitea_default  Created                        0.0s
+     ⠿ Container gitea-app-1  Started                        0.2s
     gitea.compose_up Command [changed]
     3 ok
     1 changed
     <class 'opslib.places.Command'>: 1
 
-If all goes well, Docker will start the gitea container. You can now open
-http://localhost:3000 in your browser and finish the Gitea installation by
-scrolling to the bottom and clicking "Install Gitea". Then click on "Need an
-account? Register now."; the first account will be an admin.
+If all goes well, Docker will start the gitea container, and you can see it at
+http://localhost:3000.
 
 Custom Commands
 ^^^^^^^^^^^^^^^
@@ -230,7 +239,7 @@ which makes Python exit with the same code as the command that was run, and
 does not generate a stack trace on error.
 
 .. code-block:: python
-    :caption: ``stack.py``
+    :caption: ``stack/gitea.py``
 
     import click
     # ...
@@ -270,11 +279,11 @@ Let's call our ``compose`` command and give it the ``logs`` subcommand of
 .. code-block:: none
 
     $ opslib gitea compose logs --tail=3
-    +/bin/zsh:1> cd /opt/prj/demo/my-code-forge/localgitea
+    +/bin/zsh:1> cd /opt/prj/opslib/examples/tutorial/target/gitea
     +/bin/zsh:1> docker compose logs '--tail=3'
-    localgitea-app-1  | 2023/03/20 17:25:56 cmd/web.go:220:listen() [I] [64189724] Listen: http://0.0.0.0:3000
-    localgitea-app-1  | 2023/03/20 17:25:56 cmd/web.go:224:listen() [I] [64189724] AppURL(ROOT_URL): http://localhost:3000/
-    localgitea-app-1  | 2023/03/20 17:25:56 ...s/graceful/server.go:62:NewServer() [I] [64189724] Starting new Web server: tcp:0.0.0.0:3000 on PID: 18
+    gitea-app-1  | 2023/03/20 17:25:56 cmd/web.go:220:listen() [I] [64189724] Listen: http://0.0.0.0:3000
+    gitea-app-1  | 2023/03/20 17:25:56 cmd/web.go:224:listen() [I] [64189724] AppURL(ROOT_URL): http://localhost:3000/
+    gitea-app-1  | 2023/03/20 17:25:56 ...s/graceful/server.go:62:NewServer() [I] [64189724] Starting new Web server: tcp:0.0.0.0:3000 on PID: 18
 
 This is quite a powerful way of interacting with our deployed resources,
 without explicitly shelling into remote hosts, changing directories, etc.

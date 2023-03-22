@@ -1,16 +1,15 @@
-from pathlib import Path
-
 import click
 import yaml
 
-from opslib.places import Directory, LocalHost
+from opslib.places import Directory
 from opslib.props import Prop
-from opslib.things import Stack, Thing
+from opslib.things import Thing
 
 
 class Gitea(Thing):
     class Props:
         directory = Prop(Directory)
+        listen = Prop(str)
 
     def build(self):
         self.directory = self.props.directory
@@ -41,7 +40,7 @@ class Gitea(Thing):
                     ],
                     restart="unless-stopped",
                     ports=[
-                        "127.0.0.1:3000:3000",
+                        f"{self.props.listen}:3000",
                     ],
                 ),
             ),
@@ -58,17 +57,3 @@ class Gitea(Thing):
                 capture_output=False,
                 exit=True,
             )
-
-
-class MyCodeForge(Stack):
-    def build(self):
-        host = LocalHost()
-        repo = host.directory(Path(__file__).parent)
-
-        self.gitea = Gitea(
-            directory=repo / "localgitea",
-        )
-
-
-def get_stack():
-    return MyCodeForge()
