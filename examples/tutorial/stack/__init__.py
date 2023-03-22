@@ -1,16 +1,30 @@
+import os
 from pathlib import Path
 
 from opslib.places import LocalHost
+from opslib.props import Prop
 from opslib.things import Stack
 
 from .gitea import Gitea
+from .hetzner import Hetzner
 
 
 class MyCodeForge(Stack):
+    class Props:
+        vps = Prop(bool)
+
     def build(self):
-        host = LocalHost()
-        target_path = Path(__file__).parent.parent / "target"
-        self.directory = host.directory(target_path)
+        if self.props.vps:
+            self.hetzner = Hetzner(
+                token=os.environ["HETZNER_TOKEN"],
+                server_name="mycodeforge",
+            )
+
+            self.directory = self.hetzner.host.directory("/opt/opslib")
+
+        else:
+            host = LocalHost()
+            self.directory = host.directory(Path(__file__).parent.parent / "target")
 
         self.gitea = Gitea(
             directory=self.directory / "gitea",
@@ -19,4 +33,6 @@ class MyCodeForge(Stack):
 
 
 def get_stack():
-    return MyCodeForge()
+    return MyCodeForge(
+        vps=os.environ.get("MYCODEFORGE_VPS") == "yes",
+    )

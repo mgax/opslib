@@ -1,19 +1,40 @@
 Project Layout
 ==============
 
-Create a directory for the project and enter it:
+Create a directory for the project and enter it, then create a virtualenv:
 
 .. code-block:: none
 
     $ mkdir my-code-forge
     $ cd my-code-forge
+    $ python3 -m venv .venv
 
-Set up a virtualenv and install opslib:
+To manage the environment, we'll use direnv_, which reads a configuration file
+in the current directory, and configures environment variables. Later in the
+tutorial, we're going to configure API tokens for cloud services, and we'll set
+them as environment variables in the direnv config file.
+
+Create a file named ``.envrc`` with this content:
+
+.. _direnv: https://direnv.net/
+
+.. code-block:: none
+    :caption: ``.envrc``
+
+    source .venv/bin/activate
+
+Then approve the direnv configuration and make sure it's not world-readable:
 
 .. code-block:: none
 
-    $ python3 -m venv .venv
-    $ source .venv/bin/activate
+    $ direnv allow
+    $ chmod 600 .envrc
+
+Now the virtualenv should be activated automatically any time we are in the
+project directory. Time to install opslib:
+
+.. code-block:: none
+
     $ pip install git+https://github.com/mgax/opslib
 
 Any opslib project contains a *stack* which describes the infrastructure. By

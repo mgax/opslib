@@ -7,6 +7,7 @@ Tutorial
 
    layout
    local
+   vps
 
 This tutorial will walk you through deploying Gitea using opslib. We will run
 it locally at first, using docker-compose, set up backups, configure a Git

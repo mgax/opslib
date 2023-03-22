@@ -12,6 +12,9 @@ The Opslib tutorial project fully implemented.
 
     ```shell
     source .venv/bin/activate
+    # uncomment to deploy to a Hetzner VPS:
+    #export MYCODEFORGE_VPS=yes
+    #export HETZNER_TOKEN=...
     ```
 
 1. Approve the `.envrc` file:
