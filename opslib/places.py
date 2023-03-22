@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Optional, Union
 
 from .ansible import AnsibleAction
-from .lazy import Lazy
+from .lazy import Lazy, evaluate
 from .local import run
 from .props import Prop
 from .results import Result
@@ -104,7 +104,7 @@ class SshHost(BaseHost):
             )
 
     def run(self, *args, **kwargs):
-        hostname = self.hostname
+        hostname = evaluate(self.hostname)
         if self.username:
             hostname = f"{self.username}@{hostname}"
 

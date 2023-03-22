@@ -113,7 +113,7 @@ def run_ansible(hostname, ansible_variables, action, check=False):
 
 class AnsibleAction(Thing):
     class Props:
-        hostname = Prop(str)
+        hostname = Prop(str, lazy=True)
         ansible_variables = Prop(list)
         module = Prop(str)
         args = Prop(dict)
@@ -122,18 +122,23 @@ class AnsibleAction(Thing):
     uptodate = UpToDate()
 
     @property
-    @uptodate.snapshot
     def action(self):
         return dict(
             module=self.props.module,
             args=evaluate(self.props.args),
         )
 
-    def run(self, check=False):
-        result = run_ansible(
-            hostname=self.props.hostname,
+    @uptodate.snapshot
+    def _get_ansible_args(self):
+        return dict(
+            hostname=evaluate(self.props.hostname),
             ansible_variables=self.props.ansible_variables,
             action=self.action,
+        )
+
+    def run(self, check=False):
+        result = run_ansible(
+            **self._get_ansible_args(),
             check=check,
         )
         if result.changed and self.props.format_output:
