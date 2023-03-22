@@ -1,10 +1,13 @@
 [tool.poetry]
-name = "opslib"
-version = "0.0.1"
+name = "pyopslib"
+version = "0.0.2"
 description = "A Pythonic toolkit to manage infrastructure."
 authors = ["Alex Morega <alex@grep.ro>"]
 license = "MIT"
 readme = "Readme.md"
+packages = [
+  { include = "opslib" },
+]
 
 [tool.poetry.dependencies]
 python = "^3.9"
