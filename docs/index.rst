@@ -6,4 +6,5 @@ Welcome to opslib's documentation!
    :caption: Contents:
 
    tutorial/index
+   installation
    contributing

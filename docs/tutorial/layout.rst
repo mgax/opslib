@@ -31,11 +31,8 @@ Then approve the direnv configuration and make sure it's not world-readable:
     $ chmod 600 .envrc
 
 Now the virtualenv should be activated automatically any time we are in the
-project directory. Time to install opslib:
-
-.. code-block:: none
-
-    $ pip install pyopslib
+project directory. Time to install opslib as described in
+:doc:`../installation`.
 
 Any opslib project contains a *stack* which describes the infrastructure. By
 default, opslib tries to import the ``stack`` module or package, and expects a
