@@ -3,24 +3,16 @@ from pathlib import Path
 
 from opslib.components import Stack
 from opslib.places import LocalHost
-from opslib.props import Prop
 
 from .gitea import Gitea
-from .hetzner import Hetzner
+from .hetzner import VPS
 
 
 class MyCodeForge(Stack):
-    class Props:
-        vps = Prop(bool)
-
     def build(self):
-        if self.props.vps:
-            self.hetzner = Hetzner(
-                token=os.environ["HETZNER_TOKEN"],
-                server_name="mycodeforge",
-            )
-
-            self.directory = self.hetzner.host.directory("/opt/opslib")
+        if os.environ.get("MYCODEFORGE_VPS") == "yes":
+            self.vps = VPS(name="mycodeforge")
+            self.directory = self.vps.host.directory("/opt/opslib")
 
         else:
             host = LocalHost()
@@ -33,6 +25,4 @@ class MyCodeForge(Stack):
 
 
 def get_stack():
-    return MyCodeForge(
-        vps=os.environ.get("MYCODEFORGE_VPS") == "yes",
-    )
+    return MyCodeForge()

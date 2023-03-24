@@ -8,19 +8,15 @@ from opslib.props import Prop
 from opslib.terraform import TerraformProvider
 
 
-class Hetzner(Component):
+class VPS(Component):
     class Props:
-        token = Prop(str)
-        server_name = Prop(str)
+        name = Prop(str)
 
     def build(self):
         self.provider = TerraformProvider(
             name="hcloud",
             source="hetznercloud/hcloud",
             version="~> 1.36.2",
-            config=dict(
-                token=self.props.token,
-            ),
         )
 
         self.ssh_key = self.provider.resource(
@@ -35,7 +31,7 @@ class Hetzner(Component):
         self.server = self.provider.resource(
             type="hcloud_server",
             body=dict(
-                name=self.props.server_name,
+                name=self.props.name,
                 server_type="cx11",
                 image="debian-11",
                 location="hel1",
@@ -46,8 +42,12 @@ class Hetzner(Component):
             output=["ipv4_address"],
         )
 
-        self.install_docker = self.host.command(
-            input="docker compose version || (curl -s https://get.docker.com | bash)",
+        self.install_docker = self.host.ansible_action(
+            module="ansible.builtin.shell",
+            args=dict(
+                cmd="curl -s https://get.docker.com | bash",
+                creates="/opt/bin/docker",
+            ),
         )
 
     @property

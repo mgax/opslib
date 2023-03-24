@@ -12,7 +12,7 @@ Copy the token to ``.envrc``:
     :caption: ``.envrc``
 
     source .venv/bin/activate
-    export HETZNER_TOKEN=...
+    export HCLOUD_TOKEN=...
 
 Run ``direnv allow`` to approve it.
 
@@ -28,19 +28,15 @@ Now let's define our VPS in a new file, ``stack/hetzner.py``. We configure the T
     from opslib.props import Prop
     from opslib.terraform import TerraformProvider
 
-    class Hetzner(Component):
+    class VPS(Component):
         class Props:
-            token = Prop(str)
-            server_name = Prop(str)
+            name = Prop(str)
 
         def build(self):
             self.provider = TerraformProvider(
                 name="hcloud",
                 source="hetznercloud/hcloud",
                 version="~> 1.36.2",
-                config=dict(
-                    token=self.props.token,
-                ),
             )
 
             self.ssh_key = self.provider.resource(
@@ -55,7 +51,7 @@ Now let's define our VPS in a new file, ``stack/hetzner.py``. We configure the T
             self.server = self.provider.resource(
                 type="hcloud_server",
                 body=dict(
-                    name=self.props.server_name,
+                    name=self.props.name,
                     server_type="cx11",
                     image="debian-11",
                     location="hel1",
@@ -66,8 +62,12 @@ Now let's define our VPS in a new file, ``stack/hetzner.py``. We configure the T
                 output=["ipv4_address"],
             )
 
-            self.install_docker = self.host.command(
-                input="docker compose version || (curl -s https://get.docker.com | bash)",
+            self.install_docker = self.host.ansible_action(
+                module="ansible.builtin.shell",
+                args=dict(
+                    cmd="curl -s https://get.docker.com | bash",
+                    creates="/opt/bin/docker",
+                ),
             )
 
         @property
@@ -92,16 +92,15 @@ to deploy to the VPS. Here is the new ``stack/__init__.py``:
     import os
     from opslib.components import Stack
     from .gitea import Gitea
-    from .hetzner import Hetzner
+    from .hetzner import VPS
 
     class MyCodeForge(Stack):
         def build(self):
-            self.hetzner = Hetzner(
-                token=os.environ["HETZNER_TOKEN"],
-                server_name="mycodeforge",
+            self.vps = VPS(
+                name="mycodeforge",
             )
 
-            self.directory = self.hetzner.host.directory("/opt/opslib")
+            self.directory = self.vps.host.directory("/opt/opslib")
 
             self.gitea = Gitea(
                 directory=self.directory / "gitea",
@@ -116,7 +115,7 @@ Let's run ``diff`` to see what will get deployed.
 .. code-block:: none
 
     opslib - diff
-    hetzner.ssh_key TerraformResource [changed]
+    vps.ssh_key TerraformResource [changed]
       # hcloud_ssh_key.thing will be created
       + resource "hcloud_ssh_key" "thing" {
           + fingerprint = (known after apply)
@@ -131,9 +130,9 @@ Let's run ``diff`` to see what will get deployed.
 
     Changes to Outputs:
       + id = (sensitive value)
-    hetzner.server TerraformResource ...
-    hetzner.server TerraformResource [failed]
-    <TerraformResource hetzner.ssh_key>: output 'id' not available
+    vps.server TerraformResource ...
+    vps.server TerraformResource [failed]
+    <TerraformResource vps.ssh_key>: output 'id' not available
     gitea.directory.action AnsibleAction [ok]
     gitea.data_volume.action AnsibleAction [ok]
     gitea.compose_file.action AnsibleAction [ok]
@@ -152,11 +151,11 @@ not yet available, since the key is not yet deployed. So let's deploy the key.
 
 .. code-block:: none
 
-    opslib hetzner.ssh_key deploy
+    opslib vps.ssh_key deploy
     opslib - diff
 
 Now there should be no errors. We could have deployed the whole stack in one
-go, instead of deploying ``hetzner.ssh_key`` separately, because the ``body``
+go, instead of deploying ``vps.ssh_key`` separately, because the ``body``
 prop of the server resource is only evaluated when it's time to deploy it.
 
 Let's go ahead and deploy the whole stack:
@@ -172,12 +171,12 @@ Some things that might go wrong:
 * Docker version ``23.0.1`` needs *apparmor*, which is not installed by default
   on Debian. Install it and restart Docker::
 
-    opslib hetzner ssh apt install apparmor
-    opslib hetzner ssh systemctl restart docker
+    opslib vps ssh apt install apparmor
+    opslib vps ssh systemctl restart docker
 
   You can always check if Docker works by running the ``hello-world`` image::
 
-    opslib hetzner ssh docker run --rm hello-world
+    opslib vps ssh docker run --rm hello-world
 
   Then try ``opslib - deploy`` again.
 
@@ -185,7 +184,7 @@ When the deployment is successful, get the IP address of the VPS:
 
 .. code-block:: none
 
-    opslib hetzner.server terraform output -json
+    opslib vps.server terraform output -json
 
 Then open Gitea in the browser at ``http://{ipv4_address}:3000/``.
 
@@ -199,4 +198,4 @@ The VPS is billed hourly so we should delete it when we're done:
 
 .. code-block:: none
 
-    $ opslib hetzner.server terraform destroy
+    $ opslib vps.server terraform destroy
