@@ -23,12 +23,12 @@ Now let's define our VPS in a new file, ``stack/hetzner.py``. We configure the T
 
     from pathlib import Path
     import click
+    from opslib.components import Component
     from opslib.places import SshHost
     from opslib.props import Prop
     from opslib.terraform import TerraformProvider
-    from opslib.things import Thing
 
-    class Hetzner(Thing):
+    class Hetzner(Component):
         class Props:
             token = Prop(str)
             server_name = Prop(str)
@@ -90,7 +90,7 @@ to deploy to the VPS. Here is the new ``stack/__init__.py``:
     :caption: ``stack/__init__.py``
 
     import os
-    from opslib.things import Stack
+    from opslib.components import Stack
     from .gitea import Gitea
     from .hetzner import Hetzner
 

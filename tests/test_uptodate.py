@@ -2,10 +2,10 @@ from unittest.mock import Mock
 
 import pytest
 
+from opslib.components import Component, init_statedir
 from opslib.operations import apply
 from opslib.props import Prop
 from opslib.results import Result
-from opslib.things import Thing, init_statedir
 from opslib.uptodate import UpToDate
 
 
@@ -18,7 +18,7 @@ def mock_deploy():
 def Bench(Stack, tmp_path, mock_deploy):
     path = tmp_path / "target.txt"
 
-    class Target(Thing):
+    class Target(Component):
         class Props:
             content = Prop(str)
 

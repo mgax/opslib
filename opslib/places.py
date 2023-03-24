@@ -5,11 +5,11 @@ from pathlib import Path
 from typing import Optional, Union
 
 from .ansible import AnsibleAction
+from .components import Component
 from .lazy import Lazy, evaluate
 from .local import run
 from .props import Prop
 from .results import Result
-from .things import Thing
 from .utils import diff
 
 
@@ -128,7 +128,7 @@ class SshHost(BaseHost):
         return run(*ssh_args, *args, **kwargs)
 
 
-class File(Thing):
+class File(Component):
     class Props:
         host = Prop(BaseHost)
         path = Prop(Path)
@@ -175,7 +175,7 @@ class File(Thing):
         return ""
 
 
-class Directory(Thing):
+class Directory(Component):
     class Props:
         host = Prop(BaseHost)
         path = Prop(Path)
@@ -229,7 +229,7 @@ class Directory(Thing):
         )
 
 
-class Command(Thing):
+class Command(Component):
     class Props:
         host = Prop(BaseHost)
         args = Prop(Union[list, tuple], default=[])

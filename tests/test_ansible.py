@@ -3,10 +3,10 @@ import sys
 import pytest
 
 from opslib.ansible import AnsibleAction, run_ansible
+from opslib.components import init_statedir
 from opslib.operations import apply
 from opslib.places import LocalHost
 from opslib.results import OperationError
-from opslib.things import init_statedir
 
 
 def run_local_ansible(action):

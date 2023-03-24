@@ -2,13 +2,13 @@ from pathlib import Path
 
 import click
 
+from opslib.components import Component
 from opslib.places import SshHost
 from opslib.props import Prop
 from opslib.terraform import TerraformProvider
-from opslib.things import Thing
 
 
-class Hetzner(Thing):
+class Hetzner(Component):
     class Props:
         token = Prop(str)
         server_name = Prop(str)

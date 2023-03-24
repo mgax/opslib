@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
+from opslib.components import init_statedir
 from opslib.operations import apply
-from opslib.things import init_statedir
 
 
 @pytest.mark.slow

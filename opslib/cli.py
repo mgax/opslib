@@ -5,40 +5,40 @@ import sys
 
 import click
 
+from .components import init_statedir
 from .operations import apply, print_report
-from .things import init_statedir
 
 
-def lookup(thing, path):
+def lookup(component, path):
     for name in path.split("."):
         if name == "-":
             continue
 
-        thing = thing._children[name]
+        component = component._children[name]
 
-    return thing
+    return component
 
 
-def get_cli(thing):
+def get_cli(component):
     @click.group()
     def cli():
         pass
 
     @cli.command("init")
     def init():
-        init_statedir(thing)
+        init_statedir(component)
 
     @cli.command()
     def id():
-        click.echo(repr(thing))
+        click.echo(repr(component))
 
     @cli.command()
     def ls():
-        for child in thing:
+        for child in component:
             click.echo(f"{child._meta.name}: {child!r}")
 
     @cli.command(
-        "thing",
+        "component",
         context_settings=dict(
             ignore_unknown_options=True,
             allow_interspersed_args=False,
@@ -47,15 +47,15 @@ def get_cli(thing):
     @click.pass_context
     @click.argument("path")
     @click.argument("args", nargs=-1, type=click.UNPROCESSED)
-    def thing_(ctx, path, args):
-        target = lookup(thing, path)
+    def component_(ctx, path, args):
+        target = lookup(component, path)
         target_cli = get_cli(target)
         target_cli(obj=ctx.obj, args=args)
 
     def register_apply_command(name, *decorators, **defaults):
         @click.pass_context
         def command(ctx, **kwargs):
-            results = apply(thing, **defaults, **kwargs)
+            results = apply(component, **defaults, **kwargs)
             print_report(results)
 
         for decorator in decorators:
@@ -79,7 +79,7 @@ def get_cli(thing):
         destroy=True,
     )
 
-    thing.add_commands(cli)
+    component.add_commands(cli)
 
     return cli
 
@@ -96,7 +96,7 @@ def get_main_cli(get_stack):
     def cli(debug, args):
         logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
         stack = get_stack()
-        return get_cli(stack)(args=["thing", *args])
+        return get_cli(stack)(args=["component", *args])
 
     return cli
 

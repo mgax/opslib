@@ -110,18 +110,18 @@ def pytest_collection_modifyitems(config, items):
 def no_statedir_outside_tmp_path(tmp_path, monkeypatch):
     from opslib import state
 
-    original_init = state.ThingStateDirectory.init
+    original_init = state.ComponentStateDirectory.init
 
     def mock_init(self):
         assert self._prefix.is_relative_to(tmp_path), "No statedir outside tmp"
         original_init(self)
 
-    monkeypatch.setattr(state.ThingStateDirectory, "init", mock_init)
+    monkeypatch.setattr(state.ComponentStateDirectory, "init", mock_init)
 
 
 @pytest.fixture
 def Stack(tmp_path):
-    from opslib.things import Stack
+    from opslib.components import Stack
 
     class TestingStack(Stack):
         def get_state_directory(self):

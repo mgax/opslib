@@ -1,9 +1,9 @@
 import os
 from pathlib import Path
 
+from opslib.components import Stack
 from opslib.places import LocalHost
 from opslib.props import Prop
-from opslib.things import Stack
 
 from .gitea import Gitea
 from .hetzner import Hetzner

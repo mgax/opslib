@@ -12,10 +12,10 @@ from ansible.playbook.play import Play
 from ansible.plugins.callback import CallbackBase
 from ansible.vars.manager import VariableManager
 
+from .components import Component
 from .lazy import evaluate
 from .props import Prop
 from .results import Result
-from .things import Thing
 from .uptodate import UpToDate
 
 logger = logging.getLogger(__name__)
@@ -111,7 +111,7 @@ def run_ansible(hostname, ansible_variables, action, check=False):
     return result
 
 
-class AnsibleAction(Thing):
+class AnsibleAction(Component):
     class Props:
         hostname = Prop(str, lazy=True)
         ansible_variables = Prop(list)

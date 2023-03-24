@@ -5,11 +5,11 @@ from typing import Optional
 
 import click
 
+from .components import Component
 from .lazy import Lazy, NotAvailable, evaluate
 from .local import run
 from .props import Prop
 from .results import Result
-from .things import Thing
 from .uptodate import UpToDate
 
 
@@ -27,7 +27,7 @@ class TerraformResult(Result):
             super().__init__(changed=False)
 
 
-class TerraformProvider(Thing):
+class TerraformProvider(Component):
     class Props:
         name = Prop(str)
         source = Prop(Optional[str])
@@ -66,7 +66,7 @@ class TerraformProvider(Thing):
         )
 
 
-class TerraformResource(Thing):
+class TerraformResource(Component):
     class Props:
         provider = Prop(Optional[TerraformProvider])
         type = Prop(str)

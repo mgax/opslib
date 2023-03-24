@@ -5,10 +5,10 @@ import pytest
 from click.testing import CliRunner
 
 from opslib.cli import get_main_cli
+from opslib.components import init_statedir
 from opslib.lazy import NotAvailable, evaluate
 from opslib.operations import apply
 from opslib.terraform import TerraformProvider, TerraformResource
-from opslib.things import init_statedir
 
 
 @pytest.fixture

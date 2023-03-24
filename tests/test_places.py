@@ -3,10 +3,10 @@ from textwrap import dedent
 
 import pytest
 
+from opslib.components import init_statedir
 from opslib.lazy import Lazy
 from opslib.operations import apply
 from opslib.places import LocalHost
-from opslib.things import init_statedir
 
 
 @pytest.fixture

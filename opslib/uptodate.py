@@ -5,14 +5,14 @@ from functools import partial, wraps
 from .results import Result
 
 
-class ThingUpToDate:
-    def __init__(self, thing, get_snapshot):
-        self.thing = thing
+class ComponentUpToDate:
+    def __init__(self, component, get_snapshot):
+        self.component = component
         self.get_snapshot = get_snapshot
 
     @property
     def _path(self):
-        return self.thing._meta.statedir.path / "uptodate.json"
+        return self.component._meta.statedir.path / "uptodate.json"
 
     def _get_hash(self):
         snapshot = self.get_snapshot()
@@ -34,7 +34,7 @@ class ThingUpToDate:
 
 class UpToDate:
     def __get__(self, obj, objtype=None):
-        return ThingUpToDate(obj, partial(self.snapshot_func, obj))
+        return ComponentUpToDate(obj, partial(self.snapshot_func, obj))
 
     def snapshot(self, func):
         self.snapshot_func = func

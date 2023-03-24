@@ -10,8 +10,8 @@ logger = logging.getLogger(__name__)
 class Meta:
     statedir = StateDirectory()
 
-    def __init__(self, thing, name, parent):
-        self.thing = thing
+    def __init__(self, component, name, parent):
+        self.component = component
         self.name = name
         self.parent = parent
 
@@ -23,7 +23,7 @@ class Meta:
         return f"{self.parent._meta.full_name}.{self.name}"
 
 
-class Thing:
+class Component:
     class Props:
         pass
 
@@ -43,7 +43,7 @@ class Thing:
 
     def __setattr__(self, name, value):
         super().__setattr__(name, value)
-        if not name.startswith("_") and isinstance(value, Thing):
+        if not name.startswith("_") and isinstance(value, Component):
             value._attach(self, name)
             self._children[name] = value
 
@@ -53,7 +53,7 @@ class Thing:
                 f"Cannot attach {self!r} to {parent!r} because it's already attached"
             )
 
-        self._meta = self.Meta(thing=self, name=name, parent=parent)
+        self._meta = self.Meta(component=self, name=name, parent=parent)
         self.build()
 
     def __iter__(self):
@@ -66,22 +66,22 @@ class Thing:
         pass
 
 
-class Stack(Thing):
+class Stack(Component):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._meta = self.Meta(thing=self, name="__root__", parent=None)
+        self._meta = self.Meta(component=self, name="__root__", parent=None)
         self.build()
 
     def get_state_directory(self):
         return default_state_directory(self)
 
 
-def walk(thing):
-    yield thing
-    for child in thing:
+def walk(component):
+    yield component
+    for child in component:
         yield from walk(child)
 
 
 def init_statedir(stack):
-    for thing in walk(stack):
-        thing._meta.statedir.init()
+    for component in walk(stack):
+        component._meta.statedir.init()

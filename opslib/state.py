@@ -7,12 +7,12 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
-class ThingStateDirectory:
+class ComponentStateDirectory:
     def __init__(self, meta):
         self.meta = meta
 
         if meta.parent is None:
-            self._prefix = meta.thing.get_state_directory()
+            self._prefix = meta.component.get_state_directory()
 
         else:
             self._prefix = meta.parent._meta.statedir._prefix / meta.name
@@ -21,24 +21,24 @@ class ThingStateDirectory:
 
     def init(self):
         if not self._prefix.exists():
-            logger.debug("ThingState init %s", self._prefix)
+            logger.debug("ComponentState init %s", self._prefix)
             self._prefix.mkdir(mode=0o700)
 
         if not self._path.exists():
-            logger.debug("ThingState init %s", self._path)
+            logger.debug("ComponentState init %s", self._path)
             self._path.mkdir(mode=0o700)
 
     @cached_property
     def path(self):
         assert (
             self._path.is_dir()
-        ), f"State directory for {self.meta.thing!r} missing, please run `init`."
+        ), f"State directory for {self.meta.component!r} missing, please run `init`."
         return self._path
 
 
 class StateDirectory:
     def __get__(self, obj, objtype=None):
-        return ThingStateDirectory(obj)
+        return ComponentStateDirectory(obj)
 
 
 def default_state_directory(stack):
@@ -46,13 +46,13 @@ def default_state_directory(stack):
     return Path(module.__file__).parent / ".opslib"
 
 
-class ThingJsonState:
-    def __init__(self, thing):
-        self.thing = thing
+class ComponentJsonState:
+    def __init__(self, component):
+        self.component = component
 
     @cached_property
     def _path(self):
-        return self.thing._meta.statedir.path / "state.json"
+        return self.component._meta.statedir.path / "state.json"
 
     @cached_property
     def _data(self):
@@ -92,4 +92,4 @@ class ThingJsonState:
 
 class JsonState:
     def __get__(self, obj, objtype=None):
-        return ThingJsonState(obj)
+        return ComponentJsonState(obj)

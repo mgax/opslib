@@ -3,8 +3,8 @@ from click import echo
 from click.testing import CliRunner
 
 from opslib.cli import get_cli, get_main_cli
+from opslib.components import Component, Stack
 from opslib.results import Result
-from opslib.things import Stack, Thing
 
 
 @pytest.mark.parametrize(
@@ -21,7 +21,7 @@ from opslib.things import Stack, Thing
 def test_operation(args, expected):
     log = []
 
-    class Target(Thing):
+    class Target(Component):
         def refresh(self):
             log.append("refresh")
             return Result()
@@ -52,19 +52,19 @@ def test_id():
     "path,expected",
     [
         ("-", "<Stack __root__>"),
-        ("a", "<Thing a>"),
-        ("a.b", "<Thing a.b>"),
+        ("a", "<Component a>"),
+        ("a.b", "<Component a.b>"),
         ("a.b.c", KeyError("c")),
     ],
 )
-def test_thing_lookup(path, expected):
+def test_component_lookup(path, expected):
     stack = Stack()
-    stack.a = Thing()
-    stack.a.b = Thing()
+    stack.a = Component()
+    stack.a.b = Component()
 
     def run():
         return CliRunner().invoke(
-            get_cli(stack), ["thing", path, "id"], catch_exceptions=False
+            get_cli(stack), ["component", path, "id"], catch_exceptions=False
         )
 
     if isinstance(expected, str):
@@ -79,33 +79,33 @@ def test_thing_lookup(path, expected):
 
 def test_main_cli():
     stack = Stack()
-    stack.a = Thing()
+    stack.a = Component()
     cli = get_main_cli(lambda: stack)
     result = CliRunner().invoke(cli, ["a", "id"], catch_exceptions=False)
-    assert result.output == "<Thing a>\n"
+    assert result.output == "<Component a>\n"
 
 
-def test_thing_add_cli():
-    class CommandingThing(Thing):
+def test_add_commands():
+    class CommandingComponent(Component):
         def add_commands(self, cli):
             @cli.command()
             def speak():
                 echo(f"Hello from {self!r}")
 
     stack = Stack()
-    stack.a = CommandingThing()
+    stack.a = CommandingComponent()
     cli = get_main_cli(lambda: stack)
     result = CliRunner().invoke(cli, ["a", "speak"], catch_exceptions=False)
-    assert result.output == "Hello from <CommandingThing a>\n"
+    assert result.output == "Hello from <CommandingComponent a>\n"
 
 
 def test_ls():
     stack = Stack()
-    stack.a = Thing()
-    stack.b = Thing()
+    stack.a = Component()
+    stack.b = Component()
     cli = get_main_cli(lambda: stack)
     result = CliRunner().invoke(cli, ["-", "ls"], catch_exceptions=False)
-    assert result.output == "a: <Thing a>\nb: <Thing b>\n"
+    assert result.output == "a: <Component a>\nb: <Component b>\n"
 
 
 def test_show_subcommands():

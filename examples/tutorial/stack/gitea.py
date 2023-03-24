@@ -1,12 +1,12 @@
 import click
 import yaml
 
+from opslib.components import Component
 from opslib.places import Directory
 from opslib.props import Prop
-from opslib.things import Thing
 
 
-class Gitea(Thing):
+class Gitea(Component):
     class Props:
         directory = Prop(Directory)
         listen = Prop(str)

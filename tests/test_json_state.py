@@ -1,12 +1,12 @@
 import pytest
 
+from opslib.components import Component, init_statedir
 from opslib.state import JsonState
-from opslib.things import Thing, init_statedir
 
 
 @pytest.fixture
 def Bench(Stack):
-    class Box(Thing):
+    class Box(Component):
         state = JsonState()
 
     class Bench(Stack):

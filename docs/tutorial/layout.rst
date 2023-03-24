@@ -53,8 +53,8 @@ Let's create a simple stack in the package's ``__init__.py`` file:
 .. code-block:: python
     :caption: ``stack/__init__.py``
 
+    from opslib.components import Stack
     from opslib.places import LocalHost
-    from opslib.things import Stack
 
     class MyCodeForge(Stack):
         def build(self):
@@ -77,7 +77,7 @@ This stack runs a single command which prints a message. Let's deploy it:
     1 changed
     <class 'opslib.places.Command'>: 1
 
-Lines 1 and 3 show us which thing is being deployed. Line 2 is the command's
-output. The last two lines are a summary of what happened.
+Lines 1 and 3 show us which component is being deployed. Line 2 is the
+command's output. The last two lines are a summary of what happened.
 
 Continue to :doc:`local`.

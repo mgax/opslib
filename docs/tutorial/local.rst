@@ -18,12 +18,12 @@ directory, and a data volume.
 
     import yaml
 
+    from opslib.components import Component
     from opslib.places import Directory
     from opslib.props import Prop
-    from opslib.things import Thing
 
 
-    class Gitea(Thing):
+    class Gitea(Component):
         class Props:
             directory = Prop(Directory)
             listen = Prop(str)
@@ -62,8 +62,8 @@ Then, in ``stack/__init__.py``, we import and instantiate it:
     :caption: ``stack/__init__.py``
 
     from pathlib import Path
+    from opslib.components import Stack
     from opslib.places import LocalHost
-    from opslib.things import Stack
     from .gitea import Gitea
 
     class MyCodeForge(Stack):
@@ -81,18 +81,18 @@ Then, in ``stack/__init__.py``, we import and instantiate it:
 
 Quite a few things going on here! Let's take them one at a time.
 
-Things and Props
-^^^^^^^^^^^^^^^^
+Components and Props
+^^^^^^^^^^^^^^^^^^^^
 
-Our stack is made up of ``Thing`` objects. They are the universal building
+Our stack is made up of ``Component`` objects. They are the universal building
 block: Ansible actions, Terraform resources, shell commands, and your own
 infrastructure components. They are composable and hierarchical.
 
-Each Thing may receive ``Props``, which configure it, and inject dependencies.
-Props are typed and available as ``self.props`` in the instance.
+Each Component may receive ``Props``, which configure it, and inject
+dependencies. Props are typed and available as ``self.props`` in the instance.
 
-The ``build`` method is called when a Thing instance is created. It can add
-child Things to the instance and do any needed setup.
+The ``build`` method is called when a Component instance is created. It can add
+child components to the instance and do any needed setup.
 
 Places
 ^^^^^^
@@ -115,9 +115,9 @@ First, we must run the ``init`` command, to initialize the opslib state.
     $ opslib - init
 
 It will create a subdirectory named ``.opslib`` in our project where it will
-keep track, among other things, of which things got deployed successfully. It's
-useful to assume that files don't change by themselves after we write them, so
-that we skip them, and the deployment process is quicker.
+keep track, among other things, of which components got deployed successfully.
+It's useful to assume that files don't change by themselves after we write
+them, so that we skip them, and the deployment process is quicker.
 
 .. note::
 
@@ -175,7 +175,7 @@ host. The host has a ``run`` method, which is a thin wrapper around
 .. code-block:: python
     :caption: ``stack/gitea.py``
 
-    class Gitea(Thing):
+    class Gitea(Component):
         # ...
 
         def build(self):
@@ -244,7 +244,7 @@ does not generate a stack trace on error.
     import click
     # ...
 
-    class Gitea(Thing):
+    class Gitea(Component):
         # ...
 
         def add_commands(self, cli):
@@ -260,7 +260,7 @@ does not generate a stack trace on error.
 
 You'll notice that all the commands so far had ``-`` as first argument. It
 means "the root stack object". In fact, the argument is a dotted path in the
-stack hierarchy, and can reference any Thing in our stack.
+stack hierarchy, and can reference any Component in our stack.
 
 .. code-block:: none
 

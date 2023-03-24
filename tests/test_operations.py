@@ -1,12 +1,12 @@
+from opslib.components import Component, Stack
 from opslib.lazy import Lazy, NotAvailable
 from opslib.operations import apply
 from opslib.props import Prop
 from opslib.results import Result
-from opslib.things import Stack, Thing
 
 
 def test_call_deploy():
-    class Task(Thing):
+    class Task(Component):
         class Props:
             data = Prop(str)
 
@@ -28,7 +28,7 @@ def test_call_deploy():
 
 
 def test_call_diff():
-    class Task(Thing):
+    class Task(Component):
         class Props:
             data = Prop(str)
 
@@ -50,7 +50,7 @@ def test_call_diff():
 
 
 def test_call_refresh():
-    class Task(Thing):
+    class Task(Component):
         class Props:
             data = Prop(str)
 
@@ -71,7 +71,7 @@ def test_call_refresh():
 
 
 def test_call_destroy():
-    class Task(Thing):
+    class Task(Component):
         class Props:
             data = Prop(str)
 
@@ -93,7 +93,7 @@ def test_call_destroy():
 
 
 def test_call_destroy_dry_run():
-    class Task(Thing):
+    class Task(Component):
         class Props:
             data = Prop(str)
 
@@ -117,7 +117,7 @@ def test_call_destroy_dry_run():
 def test_evaluate_lazy_result():
     called = False
 
-    class Task(Thing):
+    class Task(Component):
         def deploy(self, dry_run=False):
             def get_result():
                 nonlocal called
@@ -134,7 +134,7 @@ def test_evaluate_lazy_result():
 
 
 def test_not_available(capsys):
-    class Task(Thing):
+    class Task(Component):
         def deploy(self, dry_run=False):
             raise NotAvailable("Something is not quite ready yet")
 

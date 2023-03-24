@@ -2,15 +2,15 @@ from textwrap import dedent
 
 import pytest
 
+from opslib.components import Component, Stack
 from opslib.lazy import Lazy
 from opslib.local import run
 from opslib.operations import AbortOperation, apply, print_report
 from opslib.props import Prop
 from opslib.results import Result
-from opslib.things import Stack, Thing
 
 
-class Task(Thing):
+class Task(Component):
     class Props:
         changed = Prop(bool, default=False)
         failed = Prop(bool, default=False)
@@ -72,7 +72,7 @@ def test_print_error(capsys):
 
 
 def test_print_direct_output(capfd):
-    class DirectOutputTask(Thing):
+    class DirectOutputTask(Component):
         def deploy(self, dry_run=False):
             return Lazy(run, "echo", "hello lazy", capture_output=False)
 

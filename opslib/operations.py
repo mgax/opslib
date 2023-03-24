@@ -40,35 +40,35 @@ class Operation:
 
 
 class Printer:
-    def __init__(self, thing):
-        self.thing = thing
-        self.thing_str = str(self.thing)
-        self.thing_type_str = type(self.thing).__name__
+    def __init__(self, component):
+        self.component = component
+        self.component_str = str(self.component)
+        self.component_type_str = type(self.component).__name__
 
-    def print_thing(self, wip=False, failed=False, changed=False):
+    def print_component(self, wip=False, failed=False, changed=False):
         if wip:
-            thing_color = dict(dim=True)
+            component_color = dict(dim=True)
             status_color = dict(dim=True)
             status = "..."
 
         elif failed:
-            thing_color = dict(fg="red")
+            component_color = dict(fg="red")
             status_color = dict(fg="red")
             status = "[failed]"
 
         elif changed:
-            thing_color = dict(fg="yellow")
+            component_color = dict(fg="yellow")
             status_color = dict(fg="yellow")
             status = "[changed]"
 
         else:
-            thing_color = dict(dim=True)
+            component_color = dict(dim=True)
             status_color = dict(fg="green")
             status = "[ok]"
 
         bits = [
-            style(self.thing_str, **thing_color),
-            style(self.thing_type_str, fg="cyan"),
+            style(self.component_str, **component_color),
+            style(self.component_type_str, fg="cyan"),
             style(status, **status_color),
         ]
         echo(" ".join(bits))
@@ -77,19 +77,19 @@ class Printer:
         if overwrite:
             echo("\033[F", nl=False)
 
-        self.print_thing(failed=result.failed, changed=result.changed)
+        self.print_component(failed=result.failed, changed=result.changed)
 
         if result.failed or result.changed:
             result.print_output()
 
 
 class Runner:
-    def __init__(self, thing):
-        self.thing = thing
-        self.printer = Printer(thing)
+    def __init__(self, component):
+        self.component = component
+        self.printer = Printer(component)
 
     def run(self, func, *args, **kwargs):
-        self.printer.print_thing(wip=True)
+        self.printer.print_component(wip=True)
 
         try:
             result = func(*args, **kwargs)
@@ -111,14 +111,14 @@ class Runner:
 
         except Exception as error:
             if isinstance(error, OperationError):
-                logger.warning("Run failed on %s: %r", self.thing, error)
+                logger.warning("Run failed on %s: %r", self.component, error)
 
                 try:
                     self.printer.print_result(error.result)
 
                 except Exception:
                     logger.exception(
-                        "Failed to print exception result at %r", self.thing
+                        "Failed to print exception result at %r", self.component
                     )
 
                 echo(style("Operation failed!", fg="red"), file=sys.stderr)
@@ -127,15 +127,15 @@ class Runner:
             raise
 
 
-def iter_apply(thing, op):
-    runner = Runner(thing)
+def iter_apply(component, op):
+    runner = Runner(component)
 
-    logger.debug("Applying %r to %r", op, thing)
+    logger.debug("Applying %r to %r", op, component)
 
-    children = list(thing)
+    children = list(component)
     if op.destroy:
-        if hasattr(thing, "destroy"):
-            yield thing, runner.run(thing.destroy, dry_run=op.dry_run)
+        if hasattr(component, "destroy"):
+            yield component, runner.run(component.destroy, dry_run=op.dry_run)
 
         assert not op.refresh
         assert not op.deploy
@@ -146,17 +146,17 @@ def iter_apply(thing, op):
 
     if op.refresh:
         assert not op.dry_run
-        if hasattr(thing, "refresh"):
-            yield thing, runner.run(thing.refresh)
+        if hasattr(component, "refresh"):
+            yield component, runner.run(component.refresh)
 
     if op.deploy:
-        if hasattr(thing, "deploy"):
-            yield thing, runner.run(thing.deploy, dry_run=op.dry_run)
+        if hasattr(component, "deploy"):
+            yield component, runner.run(component.deploy, dry_run=op.dry_run)
 
 
-def apply(thing, **kwargs):
+def apply(component, **kwargs):
     op = Operation(**kwargs)
-    return dict(iter_apply(thing, op))
+    return dict(iter_apply(component, op))
 
 
 def print_report(results):
@@ -174,9 +174,9 @@ def print_report(results):
 
     if changed_count or failed_count:
         by_type = defaultdict(int)
-        for thing, result in results.items():
+        for component, result in results.items():
             if result.changed or result.failed:
-                by_type[type(thing)] += 1
+                by_type[type(component)] += 1
 
         for cls, number in by_type.items():
             echo(style(f"{cls}: {number}", dim=True))
