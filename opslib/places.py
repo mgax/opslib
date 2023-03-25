@@ -5,11 +5,13 @@ from pathlib import Path
 from typing import Optional, Union
 
 from .ansible import AnsibleAction
+from .callbacks import Callbacks
 from .components import Component
 from .lazy import Lazy, evaluate
 from .local import run
 from .props import Prop
 from .results import Result
+from .state import JsonState
 from .utils import diff
 
 
@@ -174,6 +176,10 @@ class File(Component):
 
         return ""
 
+    @property
+    def on_change(self):
+        return self.action.on_change
+
 
 class Directory(Component):
     class Props:
@@ -234,10 +240,17 @@ class Command(Component):
         host = Prop(BaseHost)
         args = Prop(Union[list, tuple], default=[])
         input = Prop(Optional[str])
+        run_after = Prop(list, default=[])
+
+    state = JsonState()
+    on_change = Callbacks()
 
     @property
     def host(self):
         return self.props.host
+
+    def _set_must_run(self):
+        self.state["must-run"] = True
 
     def run(self, **kwargs):
         return self.host.run(
@@ -246,11 +259,24 @@ class Command(Component):
             **kwargs,
         )
 
+    def build(self):
+        for other in self.props.run_after:
+            other.on_change.add(self._set_must_run)
+
     def deploy(self, dry_run=False):
+        if self.props.run_after and not self.state.get("must-run"):
+            return Result()
+
         if dry_run:
             return Result(changed=True)
 
-        return Lazy(self.run, capture_output=False)
+        def _run():
+            self.on_change.invoke()
+            result = self.run(capture_output=False)
+            self.state["must-run"] = False
+            return result
+
+        return Lazy(_run)
 
     def add_commands(self, cli):
         @cli.command

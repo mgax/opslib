@@ -12,6 +12,7 @@ from ansible.playbook.play import Play
 from ansible.plugins.callback import CallbackBase
 from ansible.vars.manager import VariableManager
 
+from .callbacks import Callbacks
 from .components import Component
 from .lazy import evaluate
 from .props import Prop
@@ -120,6 +121,7 @@ class AnsibleAction(Component):
         format_output = Prop(Optional[Callable])
 
     uptodate = UpToDate()
+    on_change = Callbacks()
 
     @property
     def action(self):
@@ -137,6 +139,9 @@ class AnsibleAction(Component):
         )
 
     def run(self, check=False):
+        if not check:
+            self.on_change.invoke()
+
         result = run_ansible(
             **self._get_ansible_args(),
             check=check,
