@@ -2,7 +2,9 @@ import shlex
 from textwrap import dedent
 
 import pytest
+from click.testing import CliRunner
 
+from opslib.cli import get_cli
 from opslib.components import init_statedir
 from opslib.lazy import Lazy
 from opslib.operations import apply
@@ -153,6 +155,18 @@ def test_command_with_input(tmp_path, local_host, Stack):
     apply(stack, deploy=True)
 
     assert (tmp_path / "foo").is_file()
+
+
+def test_command_cli_run(tmp_path, local_host, Stack):
+    path = tmp_path / "file"
+    stack = Stack()
+    stack.foo = local_host.command(
+        args=["touch", path],
+    )
+    cli = get_cli(stack.foo)
+    result = CliRunner().invoke(cli, ["run"], catch_exceptions=False)
+    assert result.exit_code == 0
+    assert path.is_file()
 
 
 def test_file_diff(tmp_path, local_host, capsys, Stack):

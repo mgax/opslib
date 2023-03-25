@@ -239,13 +239,20 @@ class Command(Component):
     def host(self):
         return self.props.host
 
+    def run(self, **kwargs):
+        return self.host.run(
+            *self.props.args,
+            input=self.props.input,
+            **kwargs,
+        )
+
     def deploy(self, dry_run=False):
         if dry_run:
             return Result(changed=True)
 
-        return Lazy(
-            self.host.run,
-            *self.props.args,
-            input=self.props.input,
-            capture_output=False,
-        )
+        return Lazy(self.run, capture_output=False)
+
+    def add_commands(self, cli):
+        @cli.command
+        def run():
+            self.run(capture_output=False, exit=True)
