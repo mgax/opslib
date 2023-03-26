@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from pathlib import Path
 from textwrap import dedent
 
@@ -9,7 +10,7 @@ from opslib.places import SshHost
 CONTAINER_IMAGE_NAME = "opslib-tests"
 CONTAINER_SSH_PORT = 22022
 CONTAINER_NAME = "opslib-tests"
-CONTAINER_SRC = Path(__file__).parent / "sshd-container"
+CONTAINER_SRC = Path(__file__).parent / "container"
 
 
 class VM:
@@ -40,8 +41,8 @@ def container_image():
     return CONTAINER_IMAGE_NAME
 
 
-@pytest.fixture
-def container_ssh(container_image, tmp_path):
+@contextmanager
+def container(image):
     run("podman", "kill", CONTAINER_NAME, check=False)
     run(
         "podman",
@@ -54,47 +55,53 @@ def container_ssh(container_image, tmp_path):
         "-d",
         "--cap-add",
         "SYS_CHROOT",
-        container_image,
+        image,
     )
 
-    with (CONTAINER_SRC / "id_ed25519").open() as f:
-        privkey = f.read()
+    try:
+        yield
 
-    with (CONTAINER_SRC / "ssh_host_ed25519_key.pub").open() as f:
-        pubkey = f.read()
+    finally:
+        run("podman", "kill", CONTAINER_NAME)
 
-    identity = tmp_path / "identity"
-    known_hosts = tmp_path / "known_hosts"
-    config_file = tmp_path / "ssh_config"
 
-    with identity.open("w") as f:
-        f.write(privkey)
+@pytest.fixture
+def ssh_container(container_image, tmp_path):
+    with container(container_image):
+        with (CONTAINER_SRC / "id_ed25519").open() as f:
+            privkey = f.read()
 
-    with known_hosts.open("w") as f:
-        f.write(f"[localhost]:22022 {pubkey}\n")
+        with (CONTAINER_SRC / "ssh_host_ed25519_key.pub").open() as f:
+            pubkey = f.read()
 
-    with config_file.open("w") as f:
-        f.write(
-            dedent(
-                f"""\
+        identity = tmp_path / "identity"
+        known_hosts = tmp_path / "known_hosts"
+        config_file = tmp_path / "ssh_config"
+
+        with identity.open("w") as f:
+            f.write(privkey)
+
+        with known_hosts.open("w") as f:
+            f.write(f"[localhost]:22022 {pubkey}\n")
+
+        with config_file.open("w") as f:
+            f.write(
+                dedent(
+                    f"""\
                     Host opslib-tests
                         UserKnownHostsFile {known_hosts}
                         Hostname localhost
                         Port {CONTAINER_SSH_PORT}
                         User opslib
                         IdentityFile {identity}
-                """
+                    """
+                )
             )
-        )
 
-    identity.chmod(0o600)
-    known_hosts.chmod(0o600)
+        identity.chmod(0o600)
+        known_hosts.chmod(0o600)
 
-    try:
         yield SshHost("opslib-tests", config_file=config_file)
-
-    finally:
-        run("podman", "kill", CONTAINER_NAME)
 
 
 def pytest_addoption(parser):
