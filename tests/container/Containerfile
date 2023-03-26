@@ -1,7 +1,7 @@
 FROM debian:bullseye-slim
 
 RUN apt-get update -qq \
- && apt-get install -qq openssh-server python3 sudo \
+ && apt-get install -qq openssh-server python3 sudo systemd curl \
  && rm -rf /var/lib/apt/lists/*
 
 RUN echo "opslib ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/opslib
@@ -11,5 +11,3 @@ RUN adduser --disabled-password opslib
 RUN mkdir /home/opslib/.ssh
 COPY id_ed25519.pub /home/opslib/.ssh/authorized_keys
 RUN chown -R opslib: /home/opslib/.ssh
-
-CMD /usr/sbin/sshd -D

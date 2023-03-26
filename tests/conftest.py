@@ -65,6 +65,7 @@ def container(image):
         "--cap-add",
         "SYS_CHROOT",
         image,
+        "systemd",
     )
 
     try:
