@@ -1,0 +1,17 @@
+name: CI
+on: [push]
+
+jobs:
+  testsuite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Prepare
+        run: |
+          pip install poetry
+          poetry install
+
+      - name: Testsuite
+        run: |
+          poetry run pytest --runslow -vv --color=yes

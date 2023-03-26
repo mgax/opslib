@@ -143,8 +143,6 @@ def test_command_with_input(tmp_path, local_host, Stack):
     stack.foo = local_host.command(
         input=dedent(
             f"""\
-            set -euo pipefail
-            set -x
             cd {shlex.quote(str(tmp_path))}
             touch foo
             """
