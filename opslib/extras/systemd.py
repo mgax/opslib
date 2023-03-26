@@ -1,7 +1,6 @@
 import configparser
 import io
 from pathlib import Path
-from textwrap import dedent
 from typing import Optional, Union
 
 import click
@@ -39,27 +38,13 @@ class SystemdUnit(Component):
 
     def enable_command(self, now=False):
         return self.props.host.command(
-            input=dedent(
-                f"""
-                set -euo pipefail
-                set -x
-                systemctl daemon-reload
-                systemctl enable{" --now" if now else ""} {self.props.name}
-                """
-            ),
+            args=["systemctl", "enable", *(["--now"] if now else []), self.props.name],
             run_after=[self.unit_file],
         )
 
     def start_command(self):
         return self.props.host.command(
-            input=dedent(
-                f"""
-                set -euo pipefail
-                set -x
-                systemctl daemon-reload
-                systemctl start {self.props.name}
-                """
-            ),
+            args=["systemctl", "start", self.props.name],
             run_after=[self.unit_file],
         )
 
