@@ -7,10 +7,12 @@ import pytest
 from opslib.local import run
 from opslib.places import SshHost
 
-CONTAINER_IMAGE_NAME = "opslib-tests"
-CONTAINER_SSH_PORT = 22022
-CONTAINER_NAME = "opslib-tests"
-CONTAINER_SRC = Path(__file__).parent / "container"
+IMAGE = "opslib-tests"
+SSH_PORT = 22022
+CONTAINER = "opslib-tests"
+SRC = Path(__file__).parent / "container"
+HOST_KEY = SRC / "ssh_host_ed25519_key.pub"
+PRIVKEY = SRC / "id_ed25519"
 
 
 class VM:
@@ -35,23 +37,30 @@ class VM:
         )
 
 
-@pytest.fixture
+def podman(*args, **kwargs):
+    return run("podman", *args, **kwargs)
+
+
+@pytest.fixture(scope="session")
 def container_image():
-    run("podman", "build", ".", "--tag", CONTAINER_IMAGE_NAME, cwd=CONTAINER_SRC)
-    return CONTAINER_IMAGE_NAME
+    if not PRIVKEY.exists():
+        run("ssh-keygen", "-t", "ed25519", "-f", PRIVKEY, "-N", "")
+    podman("build", ".", "--tag", IMAGE, cwd=SRC)
+    host_key = podman("run", "--rm", IMAGE, "cat", f"/etc/ssh/{HOST_KEY.name}").stdout
+    HOST_KEY.write_text(host_key)
+    return IMAGE
 
 
 @contextmanager
 def container(image):
-    run("podman", "kill", CONTAINER_NAME, check=False)
-    run(
-        "podman",
+    podman("kill", CONTAINER, check=False)
+    podman(
         "run",
         "--rm",
         "--name",
-        CONTAINER_NAME,
+        CONTAINER,
         "-p",
-        f"127.0.0.1:{CONTAINER_SSH_PORT}:22",
+        f"127.0.0.1:{SSH_PORT}:22",
         "-d",
         "--cap-add",
         "SYS_CHROOT",
@@ -62,41 +71,32 @@ def container(image):
         yield
 
     finally:
-        run("podman", "kill", CONTAINER_NAME)
+        podman("kill", CONTAINER)
 
 
 @pytest.fixture
 def ssh_container(container_image, tmp_path):
     with container(container_image):
-        with (CONTAINER_SRC / "id_ed25519").open() as f:
-            privkey = f.read()
-
-        with (CONTAINER_SRC / "ssh_host_ed25519_key.pub").open() as f:
-            pubkey = f.read()
-
+        privkey = (SRC / "id_ed25519").read_text()
+        pubkey = HOST_KEY.read_text()
         identity = tmp_path / "identity"
         known_hosts = tmp_path / "known_hosts"
         config_file = tmp_path / "ssh_config"
 
-        with identity.open("w") as f:
-            f.write(privkey)
-
-        with known_hosts.open("w") as f:
-            f.write(f"[localhost]:22022 {pubkey}\n")
-
-        with config_file.open("w") as f:
-            f.write(
-                dedent(
-                    f"""\
-                    Host opslib-tests
-                        UserKnownHostsFile {known_hosts}
-                        Hostname localhost
-                        Port {CONTAINER_SSH_PORT}
-                        User opslib
-                        IdentityFile {identity}
-                    """
-                )
+        identity.write_text(privkey)
+        known_hosts.write_text(f"[localhost]:22022 {pubkey}\n")
+        config_file.write_text(
+            dedent(
+                f"""\
+                Host opslib-tests
+                    UserKnownHostsFile {known_hosts}
+                    Hostname localhost
+                    Port {SSH_PORT}
+                    User opslib
+                    IdentityFile {identity}
+                """
             )
+        )
 
         identity.chmod(0o600)
         known_hosts.chmod(0o600)
