@@ -53,7 +53,7 @@ def container_image():
 
 @contextmanager
 def container(image):
-    podman("kill", CONTAINER, check=False)
+    podman("rm", "-f", CONTAINER, check=False)
     podman(
         "run",
         "--rm",
@@ -72,7 +72,7 @@ def container(image):
         yield
 
     finally:
-        podman("kill", CONTAINER)
+        podman("rm", "-f", CONTAINER)
 
 
 @pytest.fixture
