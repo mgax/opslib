@@ -35,16 +35,16 @@ class VM:
 
 
 @pytest.fixture
-def docker_image():
-    run("docker", "build", ".", "--tag", CONTAINER_IMAGE_NAME, cwd=CONTAINER_SRC)
+def container_image():
+    run("podman", "build", ".", "--tag", CONTAINER_IMAGE_NAME, cwd=CONTAINER_SRC)
     return CONTAINER_IMAGE_NAME
 
 
 @pytest.fixture
-def docker_ssh(docker_image, tmp_path):
-    run("docker", "kill", CONTAINER_NAME, check=False)
+def container_ssh(container_image, tmp_path):
+    run("podman", "kill", CONTAINER_NAME, check=False)
     run(
-        "docker",
+        "podman",
         "run",
         "--rm",
         "--name",
@@ -52,7 +52,9 @@ def docker_ssh(docker_image, tmp_path):
         "-p",
         f"127.0.0.1:{CONTAINER_SSH_PORT}:22",
         "-d",
-        docker_image,
+        "--cap-add",
+        "SYS_CHROOT",
+        container_image,
     )
 
     with (CONTAINER_SRC / "id_ed25519").open() as f:
@@ -92,7 +94,7 @@ def docker_ssh(docker_image, tmp_path):
         yield SshHost("opslib-tests", config_file=config_file)
 
     finally:
-        run("docker", "kill", CONTAINER_NAME)
+        run("podman", "kill", CONTAINER_NAME)
 
 
 def pytest_addoption(parser):
