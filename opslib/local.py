@@ -23,6 +23,8 @@ class LocalRunResult(Result):
             failed=completed.returncode != 0,
         )
 
+        logger.debug("%r output:\n====\n%s====", self, self.output)
+
     def __str__(self):
         return f"{super().__str__()} {self.completed.args}"
 
