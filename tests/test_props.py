@@ -70,7 +70,9 @@ def test_lazy_property_wrong_type():
     with pytest.raises(TypeError) as error:
         evaluate(bench.props.material)
 
-    assert error.value.args == ("Lazy prop 'material': 13 is not <class 'str'>",)
+    assert error.value.args == (
+        "Lazy prop 'material' for <class 'test_props.Bench'>: 13 is not <class 'str'>",
+    )
 
 
 def test_remainder():

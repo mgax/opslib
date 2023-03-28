@@ -24,7 +24,7 @@ class Prop:
         self.default = default
         self.lazy = lazy
 
-    def wrap_lazy(self, name, lazy_value):
+    def wrap_lazy(self, instance, name, lazy_value):
         assert self.lazy
         assert isinstance(lazy_value, Lazy)
 
@@ -32,7 +32,10 @@ class Prop:
             value = evaluate(lazy_value)
 
             if not beartype.door.is_bearable(value, self.type):
-                raise TypeError(f"Lazy prop {name!r}: {value!r} is not {self.type!r}")
+                raise TypeError(
+                    f"Lazy prop {name!r} for {instance!r}: "
+                    f"{value!r} is not {self.type!r}"
+                )
 
             return value
 
@@ -47,8 +50,8 @@ class InstanceProps:
     are attributes of this object.
     """
 
-    def __init__(self, cls, kwargs):
-        for name, prop in cls.Props.__dict__.items():
+    def __init__(self, instance, kwargs):
+        for name, prop in instance.Props.__dict__.items():
             if prop is Prop.remainder:
                 setattr(self, name, kwargs)
                 return
@@ -58,7 +61,7 @@ class InstanceProps:
 
             value = kwargs.pop(name, prop.default)
             if prop.lazy and isinstance(value, Lazy):
-                value = prop.wrap_lazy(name, value)
+                value = prop.wrap_lazy(instance, name, value)
 
             else:
                 if value is NO_DEFAULT:
@@ -73,7 +76,7 @@ class InstanceProps:
             setattr(self, name, value)
 
         for name in kwargs:
-            raise TypeError(f"{name!r} is an invalid prop for {cls!r}")
+            raise TypeError(f"{name!r} is an invalid prop for {instance!r}")
 
     def __repr__(self):
         return f"<{type(self).__name__}: {vars(self)}>"
