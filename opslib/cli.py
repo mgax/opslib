@@ -1,12 +1,15 @@
 import importlib
 import logging
 import os
+import pdb
 import sys
 
 import click
 
 from .components import init_statedir
 from .operations import apply, print_report
+
+logger = logging.getLogger(__name__)
 
 
 def lookup(component, path):
@@ -92,11 +95,21 @@ def get_main_cli(get_stack):
         )
     )
     @click.option("-d", "--debug", is_flag=True)
+    @click.option("--pdb", "use_pdb", is_flag=True)
     @click.argument("args", nargs=-1, type=click.UNPROCESSED)
-    def cli(debug, args):
+    def cli(debug, use_pdb, args):
         logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
-        stack = get_stack()
-        return get_cli(stack)(args=["component", *args])
+        try:
+            stack = get_stack()
+            return get_cli(stack)(args=["component", *args])
+
+        except Exception:
+            if use_pdb:
+                logger.exception("Command failed")
+                pdb.post_mortem()
+                sys.exit(1)
+
+            raise
 
     return cli
 
