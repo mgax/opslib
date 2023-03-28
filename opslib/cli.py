@@ -94,6 +94,21 @@ def get_main_cli(get_stack):
     :param get_stack: Callable that returns a :class:`~opslib.components.Stack`.
     """
 
+    def complete(ctx, param, incomplete):
+        component = get_stack()
+        prefix = ""
+
+        while "." in incomplete:
+            next, incomplete = incomplete.split(".", 1)
+            component = component._children[next]
+            prefix = f"{prefix}{next}."
+
+        return [
+            f"{prefix}{name}"
+            for name in component._children
+            if name.startswith(incomplete)
+        ]
+
     @click.command(
         context_settings=dict(
             ignore_unknown_options=True,
@@ -102,7 +117,7 @@ def get_main_cli(get_stack):
     )
     @click.option("-d", "--debug", is_flag=True)
     @click.option("--pdb", "use_pdb", is_flag=True)
-    @click.argument("args", nargs=-1, type=click.UNPROCESSED)
+    @click.argument("args", nargs=-1, type=click.UNPROCESSED, shell_complete=complete)
     def cli(debug, use_pdb, args):
         logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
         try:
