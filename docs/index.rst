@@ -9,3 +9,4 @@ Welcome to opslib's documentation!
    installation
    components
    contributing
+   api

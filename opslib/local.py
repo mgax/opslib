@@ -40,6 +40,29 @@ def run(
     exec=False,
     **kwargs,
 ):
+    """
+    The ``run`` function is a thin wrapper around :func:`subprocess.run`. It
+    captures output and exit code and returns them as a :class:`LocalRunResult`
+    object.
+
+    :param input: Content to send to *stdin* (optional).
+    :param capture_output: Capture *stdout* and *stderr*. Enabled by default.
+    :param encoding: Text encoding for *stdin*, *stdout* and *stderr*. Defaults
+                     to ``"utf8"``. Set to ``None`` to disable encoding and use
+                     raw :class:`bytes`.
+    :param extra_env: A dictionary of environment variables to send to the
+                      subprocess, in addition to the ones in :obj:`os.environ`.
+    :param exit: If set, when the subprocess is complete, call :func:`sys.exit`
+                 with the subprocess exit code. Useful when wrapping commands
+                 for the CLI.
+    :param check: If True (default), when the subprocess exits with an error
+                  code, raise :class:`~opslib.results.OperationError`.
+    :param exec: Instead of calling :func:`subprocess.run`, invoke the command
+                 using :func:`os.execvpe`. This will replace the current
+                 program with the new one. Useful when wrapping commands for
+                 the CLI.
+    """
+
     if input is None:
         logger.debug("Running %r", args)
 

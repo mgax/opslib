@@ -28,6 +28,10 @@ class Meta:
 
 
 class Component:
+    """
+    The basic building block to define the stack. See :doc:`components`.
+    """
+
     class Props:
         pass
 
@@ -64,13 +68,25 @@ class Component:
         return iter(self._children.values())
 
     def build(self):
-        pass
+        """
+        Called when the component is attached to a parent. Override this method
+        to add sub-components.
+        """
 
     def add_commands(self, cli):
-        pass
+        """
+        Called when the CLI is constructed. Override this method to add custom
+        commands.
+        """
 
 
 class Stack(Component):
+    """
+    Stack represents the root of the component stack. It behaves like a regular
+    :class:`Component`, except that its ``build()`` method is called when it's
+    instantiated.
+    """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._meta = self.Meta(component=self, name="__root__", parent=None)

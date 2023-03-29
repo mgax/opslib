@@ -16,35 +16,68 @@ from .utils import diff
 
 
 class BaseHost:
+    """
+    Abstract class for a host.
+    """
+
     with_sudo = False
 
-    def file(self, **kwargs):
+    def file(self, **props):
+        """
+        Shorthand function that returns a :class:`File` component with ``host``
+        set to this host. Keyword arguments are forwarded as props to the File.
+        """
+
         return File(
             host=self,
-            **kwargs,
+            **props,
         )
 
-    def directory(self, path, **kwargs):
+    def directory(self, path, **props):
+        """
+        Shorthand function that returns a :class:`Directory` component with
+        ``host`` set to this host. Keyword arguments are forwarded as props to
+        the Directory.
+        """
+
         return Directory(
             host=self,
             path=Path(path),
-            **kwargs,
+            **props,
         )
 
-    def command(self, **kwargs):
+    def command(self, **props):
+        """
+        Shorthand function that returns a :class:`Command` component with
+        ``host`` set to this host. Keyword arguments are forwarded as props to
+        the Command.
+        """
+
         return Command(
             host=self,
-            **kwargs,
+            **props,
         )
 
-    def ansible_action(self, **kwargs):
+    def ansible_action(self, **props):
+        """
+        Shorthand function that returns an :class:`AnsibleAction` component
+        with ``host`` set to this host. Keyword arguments are forwarded as
+        props to the AnsibleAction.
+        """
+
         return AnsibleAction(
             hostname=self.hostname,
             ansible_variables=self.ansible_variables,
-            **kwargs,
+            **props,
         )
 
     def sudo(self):
+        """
+        Returns a copy of this host that has the ``with_sudo`` flag set. This
+        means that commands will be run using ``sudo``, and Ansible will be
+        invoked with ``become=True``.
+        """
+
         rv = copy(self)
         rv.with_sudo = True
         rv.ansible_variables = [
@@ -57,6 +90,10 @@ class BaseHost:
 
 
 class LocalHost(BaseHost):
+    """
+    The local host on which opslib is running.
+    """
+
     hostname = "localhost"
     ansible_variables = [
         ("ansible_connection", "local"),
@@ -71,6 +108,10 @@ class LocalHost(BaseHost):
 
 
 class SshHost(BaseHost):
+    """
+    Connect to a remote host over SSH.
+    """
+
     def __init__(
         self,
         hostname,
@@ -131,6 +172,17 @@ class SshHost(BaseHost):
 
 
 class File(Component):
+    """
+    The File component creates a regular file on the host.
+
+    :param host: The parent host.
+    :param path: Absolute path of the file.
+    :param content: Content to write to the file. May be ``str`` or ``bytes``.
+    :param mode: Unix file permissions (optional).
+    :param owner: The name of the user owning the directory (optional).
+    :param group: The name of the group owning the directory (optional).
+    """
+
     class Props:
         host = Prop(BaseHost)
         path = Prop(Path)
@@ -182,6 +234,16 @@ class File(Component):
 
 
 class Directory(Component):
+    """
+    The Directory component creates a directory on the host.
+
+    :param host: The parent host.
+    :param path: Absolute path of the directory.
+    :param mode: Unix file permissions (optional).
+    :param owner: The name of the user owning the directory (optional).
+    :param group: The name of the group owning the directory (optional).
+    """
+
     class Props:
         host = Prop(BaseHost)
         path = Prop(Path)
@@ -236,6 +298,21 @@ class Directory(Component):
 
 
 class Command(Component):
+    """
+    The Command component represents a command that should be run on the
+    host during deployment.
+
+    :param host: The parent host.
+    :param args: Command arguments array. The first argument is the command
+                 itself. Defaults to ``[]``, which invokes the shell, useful
+                 with the ``input`` parameter.
+    :param input: Content to be sent to standard input. Defaults to no input.
+    :param run_after: A list of components that trigger this command to be run.
+                      If empty, the command will always be run, otherwise it
+                      will run once, and then only run after one of the
+                      components changes.
+    """
+
     class Props:
         host = Prop(BaseHost)
         args = Prop(Union[list, tuple], default=[])
