@@ -60,9 +60,10 @@ class BaseHost:
 
     def ansible_action(self, **props):
         """
-        Shorthand function that returns an :class:`AnsibleAction` component
-        with ``host`` set to this host. Keyword arguments are forwarded as
-        props to the AnsibleAction.
+        Shorthand function that returns an
+        :class:`~opslib.ansible.AnsibleAction` component with ``hostname`` and
+        ``ansible_variables`` set from this host. Keyword arguments are
+        forwarded as props to *AnsibleAction*.
         """
 
         return AnsibleAction(
@@ -91,7 +92,12 @@ class BaseHost:
 
 class LocalHost(BaseHost):
     """
-    The local host on which opslib is running.
+    The local host on which opslib is running. It receives no arguments.
+
+    :ivar hostname: Set to ``localhost``.
+    :ivar ansible_variables: Two variables are set: ``ansible_connection`` is
+                             ``local``; ``ansible_python_interpreter`` is set
+                             to :obj:`sys.executable`.
     """
 
     hostname = "localhost"
@@ -109,7 +115,21 @@ class LocalHost(BaseHost):
 
 class SshHost(BaseHost):
     """
-    Connect to a remote host over SSH.
+    Connect to a remote host over SSH. Most arguments configure how the ``ssh``
+    subcommand is invoked. If you have already configured the host in
+    ``~/.ssh/config``, it's enough to specify ``hostname``, as you would in the
+    terminal.
+
+    :param hostname: Name of the remote host.
+    :param username: Username to log in.
+    :param port: Port number.
+    :param private_key_file: Path to an SSH identity file to be used for
+                             authentication.
+    :param config_file: SSH configuration file to use instead of
+                        ``~/.ssh/config``.
+    :param interpreter: Python interpreter to be used by Ansible. Set as the
+                        ``ansible_python_interpreter`` variable. Defaults to
+                        ``"python3"``.
     """
 
     def __init__(

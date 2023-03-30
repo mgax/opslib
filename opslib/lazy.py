@@ -6,6 +6,13 @@ class NotAvailable(KeyError):
 
 
 class Lazy:
+    """
+    A Lazy object wraps a value that will be available at a later time.
+
+    When evaluated, it invokes its arguments as ``func(*args, **kwargs)``,
+    caches the result and returns it.
+    """
+
     def __init__(self, func, *args, **kwargs):
         self.func = func
         self.args = args
@@ -13,6 +20,11 @@ class Lazy:
 
     @cached_property
     def value(self):
+        """
+        When ``value`` is retrieved, the Lazy object evaluates itself and
+        returns the result.
+        """
+
         return self.func(*self.args, **self.kwargs)
 
 
@@ -21,6 +33,12 @@ def is_lazy(ob):
 
 
 def evaluate(ob):
+    """
+    Evaluate :class:`Lazy` objects and return the result. If invoked with a
+    non-*Lazy* argument, it traverses nested lists and dictionaries, making
+    copies of them, and evaluating any *Lazy* values inside.
+    """
+
     if is_lazy(ob):
         return ob.value
 
@@ -34,6 +52,12 @@ def evaluate(ob):
 
 
 def lazy_property(func):
+    """
+    Similar to :class:`@property <property>`, makes a method function like an instance
+    property. When the property is retrieved, it returns a :class:`Lazy`
+    object, that invokes the method when evaluated.
+    """
+
     @property
     @wraps(func)
     def getter(self):

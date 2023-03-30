@@ -40,6 +40,21 @@ class StdoutCallback(CallbackBase):
 
 
 class AnsibleResult(Result):
+    """
+    The result of an :class:`AnsibleAction`, or a call to :func:`run_ansible`.
+    In addition to the fields inherited from :class:`Result`, it contains the
+    following:
+
+    :ivar data: The original result object reported by Ansible. The format
+                varies quite a bit from module to module.
+    :ivar exception: If the action failed, this contains the stack trace from
+                     Ansible, as :class:`str`.
+    :ivar msg: If the action failed, this contains the error message from
+            Ansible.
+    :ivar stdout: The ``stdout`` field from ``data``.
+    :ivar stderr: The ``stderr`` field from ``data``.
+    """
+
     def __init__(self, data, failed):
         self.data = data
         self.exception = data.get("exception", "")
@@ -64,6 +79,24 @@ class AnsibleResult(Result):
 
 
 def run_ansible(hostname, ansible_variables, action, check=False):
+    """
+    Invoke Ansible with a single action. This creates and executes an Ansible
+    Play, with a single host, and a single task that contains the given action.
+    Returns an :class:`AnsibleResult` object.
+
+    Instead of directly calling this function, typically one would create an
+    :class:`AnsibleAction` in the stack, but it's usable directly if need be.
+    It encapsulates all setup and teardown of the Ansible machinery and exposes
+    only the essential arguments.
+
+    :param hostname: Name of the host to act on.
+    :param ansible_variables: List of variables to configure Ansible.
+    :param action: The Ansible action. It should be a dictionary with members
+                   *module* and *args*.
+    :param check: If ``True``, run Ansible in "check" mode, which will not
+                  apply any changes, just show differences.
+    """
+
     context.CLIARGS = ImmutableDict(
         connection="smart",
         check=check,
@@ -113,6 +146,22 @@ def run_ansible(hostname, ansible_variables, action, check=False):
 
 
 class AnsibleAction(Component):
+    """
+    The AnsibleAction component executes an Ansible module.
+
+    :param hostname: Name of the host to act on.
+    :param ansible_variables: List of variables to configure Ansible.
+    :param module: Name of the Ansible module to invoke, e.g.
+                   ``"ansible.builtin.copy"``.
+    :param args: Dictionary of arguments for the module. Consult each module's
+                 documentation for the args (or *Parameters*) it supports.
+    :param format_output: Optional callback used to format the result output.
+                          If provided, it will be called with a single
+                          parameter, the :class:`AnsibleResult` object; its
+                          return value will be used to overwrite the ``output``
+                          attribute of the result.
+    """
+
     class Props:
         hostname = Prop(str, lazy=True)
         ansible_variables = Prop(list)
@@ -139,6 +188,10 @@ class AnsibleAction(Component):
         )
 
     def run(self, check=False):
+        """
+        Call :func:`run_ansible` with the action defined by this component.
+        """
+
         if not check:
             self.on_change.invoke()
 

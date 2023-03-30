@@ -12,6 +12,14 @@ Components
 .. autoclass:: Stack
    :show-inheritance:
 
+.. module:: opslib.lazy
+
+.. autoclass:: Lazy
+
+.. autofunction:: evaluate
+
+.. autofunction:: lazy_property
+
 Operations
 ----------
 
@@ -54,6 +62,11 @@ Ansible
 .. module:: opslib.ansible
 
 .. autoclass:: AnsibleAction
+   :members: run
+
+.. autoclass:: AnsibleResult
+
+.. autofunction:: run_ansible
 
 Terraform
 ---------
@@ -61,5 +74,7 @@ Terraform
 .. module:: opslib.terraform
 
 .. autoclass:: TerraformProvider
+   :members:
 
 .. autoclass:: TerraformResource
+   :members: import_resource, output, run

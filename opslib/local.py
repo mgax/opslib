@@ -9,6 +9,15 @@ logger = logging.getLogger(__name__)
 
 
 class LocalRunResult(Result):
+    """
+    The result of a call to :func:`run`. In addition to the fields inherited
+    from :class:`Result`, it contains the following:
+
+    :ivar completed: Exit code of the subprocess.
+    :ivar stderr: Standard error from the subprocess (:class:`str`).
+    :ivar stdout: Standard output from the subprocess (:class:`str`).
+    """
+
     def __init__(self, completed, encoding=None):
         def decode(buf):
             return buf.decode(encoding) if encoding else buf

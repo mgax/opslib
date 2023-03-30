@@ -28,6 +28,21 @@ class TerraformResult(Result):
 
 
 class TerraformProvider(Component):
+    """
+    The TerraformProvider component represents a Provider in the Terraform
+    universe. After a provider is defined, :class:`TerraformResource`
+    components can be created from it.
+
+    :param name: The name of the provider, e.g. ``"aws"``.
+    :param source: Provider source, e.g. ``"hashicorp/aws"``.
+    :param version: Version requirement, e.g. ``"~> 4.0"`` (optional but highly
+                    recommended).
+    :param config: Provider configuration (optional). Most providers require
+                   some level of configuration, although it can sometimes be
+                   set through environment variables; consult each provider's
+                   documentation for details.
+    """
+
     class Props:
         name = Prop(str)
         source = Prop(Optional[str])
@@ -60,6 +75,11 @@ class TerraformProvider(Component):
         return config
 
     def resource(self, **props):
+        """
+        Shorthand method to create a :class:`TerraformResource`, with
+        ``provider`` set to this component.
+        """
+
         return TerraformResource(
             provider=self,
             **props,
@@ -67,6 +87,22 @@ class TerraformProvider(Component):
 
 
 class TerraformResource(Component):
+    """
+    The TerraformResource component creates a single Resource through
+    Terraform.
+
+    :param provider: The :class:`TerraformProvider` for this resource.
+                     Technically optional because some builtin resource types
+                     of Terraform don't belong to any provider.
+    :param type: Type of resource, e.g. ``"aws_vpc"``.
+    :param body: Arguments of the resource (:class:`dict`). Consult the
+                 provider's documentation for the arguments supported by each
+                 resource.
+    :param output: List of attributes exported by the resource to be fetched
+                   from Terraform. They are available on the ``output``
+                   property. (optional)
+    """
+
     class Props:
         provider = Prop(Optional[TerraformProvider])
         type = Prop(str)
@@ -118,6 +154,10 @@ class TerraformResource(Component):
         self._init = lambda: None
 
     def run(self, *args, terraform_init=True, **kwargs):
+        """
+        Run the ``terraform`` command with the given arguments.
+        """
+
         if terraform_init:
             self._init()
         return self._run(*args, **kwargs)
@@ -133,6 +173,10 @@ class TerraformResource(Component):
         return TerraformResult(self.run(*args, "-refresh=false"))
 
     def import_resource(self, resource_id):
+        """
+        Import an existing resource into Terraform.
+        """
+
         return self.run("import", f"{self.props.type}.thing", evaluate(resource_id))
 
     @cached_property
@@ -141,6 +185,10 @@ class TerraformResource(Component):
 
     @cached_property
     def output(self):
+        """
+        Output values returned from Terraform.
+        """
+
         def lazy_output(name):
             def get_value():
                 try:
