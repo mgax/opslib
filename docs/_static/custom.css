@@ -1,0 +1,9 @@
+div.document {
+  width: unset;
+  max-width: 1200px;
+}
+
+div.body {
+  min-width: unset;
+  max-width: unset;
+}
