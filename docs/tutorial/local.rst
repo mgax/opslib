@@ -84,24 +84,28 @@ Quite a few things going on here! Let's take them one at a time.
 Components and Props
 ^^^^^^^^^^^^^^^^^^^^
 
-Our stack is made up of ``Component`` objects. They are the universal building
-block: Ansible actions, Terraform resources, shell commands, and your own
-infrastructure components. They are composable and hierarchical.
+Our stack is made up of :class:`~opslib.components.Component` objects. They are
+the universal building block: Ansible actions, Terraform resources, shell
+commands, and your own infrastructure components. They are composable and
+hierarchical.
 
-Each Component may receive ``Props``, which configure it, and inject
-dependencies. Props are typed and available as ``self.props`` in the instance.
+Each Component may receive :class:`Props <opslib.props.Prop>`, which configure
+it, and inject dependencies. Props are typed and available as ``self.props`` in
+the instance.
 
-The ``build`` method is called when a Component instance is created. It can add
-child components to the instance and do any needed setup.
+The :meth:`~opslib.components.Component.build` method is called when a
+Component instance is created. It can add child components to the instance and
+do any needed setup.
 
 Places
 ^^^^^^
 
 Hosts, directories and files are the bread and butter of deployment. Here we
-use ``LocalHost`` because we're deploying locally, but the same code will work
-unchanged when we'll want to deploy to a remote host over SSH.
+use :class:`~opslib.places.LocalHost` because we're deploying locally, but the
+same code will work unchanged when we'll want to deploy to a remote host over
+SSH.
 
-By setting the ``Directory`` objects ``self.directory`` and
+By setting the :class:`~opslib.places.Directory` objects ``self.directory`` and
 ``self.data_volume`` on the ``Gitea`` instance, we attach them to our stack,
 which ensures the directories will be created.
 
@@ -167,9 +171,10 @@ The output will be simiar to ``diff``, and will create the compose project in
 Running Commands
 ----------------
 
-Each ``Directory`` has a ``host`` property which is a reference to its parent
-host. The host has a ``run`` method, which is a thin wrapper around
-``subprocess.run``. Let's add a command to the end of the ``build`` method of
+Each :class:`~opslib.places.Directory` has a ``host`` property which is a
+reference to its parent host. The host has a
+:meth:`~opslib.places.LocalHost.run` method, which is a thin wrapper around
+``subprocess.run``. Let's add a command to the end of the ``build()`` method of
 ``Gitea`` that runs ``docker compose up -d``:
 
 .. code-block:: python
@@ -228,15 +233,15 @@ Custom Commands
 ^^^^^^^^^^^^^^^
 
 Besides opslib's builtin CLI commands, we can define our own, by implementing
-``add_commands``. We define the ``compose`` command, such named because Click
-picks up the command name from the function name; it will run any ``docker
-compose`` subcommand we ask it.
+:meth:`~opslib.components.Component.add_commands`. We define the ``compose``
+command, such named because Click picks up the command name from the function
+name; it will run any ``docker compose`` subcommand we ask it.
 
-The host's ``run`` method will normally capture output and wrap the result in
-an object, suitable for the deployment machinery. But we can run commands
-interactively, by disabling ``capture_output``. We also set ``exit=True``,
-which makes Python exit with the same code as the command that was run, and
-does not generate a stack trace on error.
+The host's :meth:`~opslib.places.LocalHost.run` method will normally capture
+output and wrap the result in an object, suitable for the deployment machinery.
+But we can run commands interactively, by disabling ``capture_output``. We also
+set ``exit=True``, which makes Python exit with the same code as the command
+that was run, and does not generate a stack trace on error.
 
 .. code-block:: python
     :caption: ``stack/gitea.py``

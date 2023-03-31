@@ -1,15 +1,17 @@
 Components
 ==========
 
-Opslib defines infrastructure in terms of *Components*. They encapsulate a
-particular slice of infrastructure, and are typically built from smaller
-components. They are reusable, and configured via *Props*.
+Opslib defines infrastructure in terms of :class:`Components
+<opslib.components.Component>`. They encapsulate a particular slice of
+infrastructure, and are typically built from smaller components. They are
+reusable, and configured via :class:`Props <opslib.props.Prop>`.
 
 
 Build
 -----
 
-A typical component will have a ``build()`` method which defines its structure:
+A typical component will have a :meth:`~opslib.components.Component.build`
+method which defines its structure:
 
 .. code-block:: python
 
@@ -34,9 +36,9 @@ By setting ``self.spot`` and ``self.oscar``, we attach the ``Cat`` instances to
 the ``House`` instance, thus adding them to our stack. The ``Cat`` instances
 take their names from the attribute names: ``spot`` and ``oscar``.
 
-Components know their place in the stack. For instance, calling :func:`str` or
-:func:`print` on them yields their full path. Calling :func:`repr` also yields
-the class name:
+Components know their place in the stack. For instance, calling :class:`str()
+<str>` or :func:`print` on them yields their full path. Calling :func:`repr`
+also yields the class name:
 
 .. code-block:: python
 
@@ -55,15 +57,17 @@ Components can also enumerate their children if we iterate over them:
     [<Cat apartment.spot>, <Cat apartment.oscar>]
 
 The ``build()`` method is actually called on child components as a result of
-attaching them to their parent. The exception is the ``Stack`` class; its
-``build()`` method gets called during ``__init__``.
+attaching them to their parent. The exception is the
+:class:`~opslib.components.Stack` class; its ``build()`` method gets called
+during ``__init__``.
 
 .. _component-props:
 
 Props
 -----
 
-A component expects its configuration to be supplied via named *Props*.
+A component expects its configuration to be supplied via named :class:`Props
+<opslib.props.Prop>`.
 
 .. code-block:: python
 
