@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 class LocalRunResult(Result):
     """
     The result of a call to :func:`run`. In addition to the fields inherited
-    from :class:`Result`, it contains the following:
+    from :class:`~opslib.results.Result`, it contains the following:
 
     :ivar completed: Exit code of the subprocess.
     :ivar stderr: Standard error from the subprocess (:class:`str`).

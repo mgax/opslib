@@ -15,6 +15,19 @@ class AbortOperation(RuntimeError):
 
 
 class Operation:
+    """
+    The Operation class represents an operation to be performed on a selection
+    of :class:`~opslib.components.Component` objects.
+
+    :param dry_run: If ``True``, the operation will not have effects on the
+                    target, just show what would change.
+    :param deploy: If ``True``, apply changes to the target. May be combined
+                   with ``dry_run``.
+    :param refresh: If ``True``, inspect the state of the target and save it in
+                    local state.
+    :param destroy: If ``True``, destroy the target resource.
+    """
+
     FLAGS = [
         "dry_run",
         "deploy",
@@ -155,6 +168,18 @@ def iter_apply(component, op):
 
 
 def apply(component, **kwargs):
+    """
+    Apply the specified operation on ``component``. It will also be applied
+    recursively, depth-first, to all child components.
+
+    The order differs depending on the operation. For ``refresh`` and
+    ``deploy``, children are processed first. For ``destroy``, the parent
+    component is processed first, then its children.
+
+    :param component: The :class:`Component` on which to apply the operation.
+    :param kwargs: Keyword arguments are forwarded to :class:`Operation`.
+    """
+
     op = Operation(**kwargs)
     return dict(iter_apply(component, op))
 

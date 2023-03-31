@@ -36,6 +36,13 @@ class Result:
         return f"<{type(self).__name__} changed={self.changed} failed={self.failed}>"
 
     def raise_if_failed(self, *args):
+        """
+        Check if the ``failed`` flag is set, and if so, raises
+        :class:`OperationError`.
+
+        :param args: Arguments to be passed to *OperationError*.
+        """
+
         if self.failed:
             raise OperationError(*args, result=self)
 

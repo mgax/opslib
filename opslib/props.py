@@ -6,6 +6,17 @@ NO_DEFAULT = object()
 
 
 class Prop:
+    """
+    The Prop class is the definition of a component *Prop*. See
+    :ref:`component-props`.
+
+    :param type: The :class:`type` that the value must match.
+    :param default: Default value if the prop is not specified. Falls back to
+                    ``None`` if not specified.
+    :param lazy: If ``True``, the value may be :class:`~opslib.lazy.Lazy`, and
+                 its type will be checked when it's evaluated.
+    """
+
     remainder = object()
 
     def __init__(self, type, default=NO_DEFAULT, lazy=False):
@@ -29,6 +40,13 @@ class Prop:
 
 
 class InstanceProps:
+    """
+    The InstanceProps class is a container for instance props (see
+    :ref:`component-props`). Typically it's found as the ``.props`` attribute
+    of a :class:`~opslib.components.Component` instance. The props themselves
+    are attributes of this object.
+    """
+
     def __init__(self, cls, kwargs):
         for name, prop in cls.Props.__dict__.items():
             if prop is Prop.remainder:

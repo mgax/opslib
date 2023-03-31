@@ -77,6 +77,9 @@ class Component:
         """
         Called when the CLI is constructed. Override this method to add custom
         commands.
+
+        :param cli: A :class:`click.Group` that represents the CLI of this
+                    component.
         """
 
 
@@ -93,10 +96,22 @@ class Stack(Component):
         self.build()
 
     def get_state_directory(self):
+        """
+        Returns the directory where opslib will keep its state. Defaults to a
+        directory named ``.opslib`` in the parent folder of the file where the
+        class is defined. Override this method if you want to store state
+        elsewhere.
+        """
+
         return default_state_directory(self)
 
 
 def walk(component):
+    """
+    Iterate depth-first over all child components. The first item is
+    ``component`` itself.
+    """
+
     yield component
     for child in component:
         yield from walk(child)

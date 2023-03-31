@@ -58,6 +58,7 @@ The ``build()`` method is actually called on child components as a result of
 attaching them to their parent. The exception is the ``Stack`` class; its
 ``build()`` method gets called during ``__init__``.
 
+.. _component-props:
 
 Props
 -----

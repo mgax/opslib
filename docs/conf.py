@@ -9,6 +9,7 @@ extensions = [
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
+    "click": ("https://click.palletsprojects.com/en/8.1.x/", None),
 }
 
 templates_path = ["_templates"]

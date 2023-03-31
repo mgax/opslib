@@ -88,6 +88,12 @@ def get_cli(component):
 
 
 def get_main_cli(get_stack):
+    """
+    Create a :class:`click.Group` for the given stack.
+
+    :param get_stack: Callable that returns a :class:`~opslib.components.Stack`.
+    """
+
     @click.command(
         context_settings=dict(
             ignore_unknown_options=True,
@@ -115,6 +121,15 @@ def get_main_cli(get_stack):
 
 
 def main():
+    """
+    Main entry point for the ``opslib`` CLI command. It tries to run ``import
+    stack`` and expects to find a callable named ``stack.get_stack``, which it
+    sends to :func:`get_main_cli`.
+
+    The ``OPSLIB_STACK`` environment variable can be set to import something
+    other than ``stack``.
+    """
+
     sys.path.append(os.getcwd())
     module = importlib.import_module(os.environ.get("OPSLIB_STACK", "stack"))
     cli = get_main_cli(module.get_stack)

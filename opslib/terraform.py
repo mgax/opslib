@@ -14,6 +14,14 @@ from .uptodate import UpToDate
 
 
 class TerraformResult(Result):
+    """
+    The result of an invocation of ``terraform``. In addition to the fields
+    inherited from :class:`~opslib.results.Result`, it contains the following:
+
+    :ivar tf_result: The original :class:`~opslib.local.LocalRunResult` of
+                     invoking the ``terraform`` command.
+    """
+
     marker = "Terraform will perform the following actions:"
 
     def __init__(self, tf_result):

@@ -42,8 +42,8 @@ class StdoutCallback(CallbackBase):
 class AnsibleResult(Result):
     """
     The result of an :class:`AnsibleAction`, or a call to :func:`run_ansible`.
-    In addition to the fields inherited from :class:`Result`, it contains the
-    following:
+    In addition to the fields inherited from :class:`~opslib.results.Result`,
+    it contains the following:
 
     :ivar data: The original result object reported by Ansible. The format
                 varies quite a bit from module to module.
@@ -149,7 +149,7 @@ class AnsibleAction(Component):
     """
     The AnsibleAction component executes an Ansible module.
 
-    :param hostname: Name of the host to act on.
+    :param hostname: Name of the host to act on. May be :class:`~opslib.lazy.Lazy`.
     :param ansible_variables: List of variables to configure Ansible.
     :param module: Name of the Ansible module to invoke, e.g.
                    ``"ansible.builtin.copy"``.

@@ -107,6 +107,13 @@ class LocalHost(BaseHost):
     ]
 
     def run(self, *args, **kwargs):
+        """
+        Run a command on the local host. If ``args`` is empty, it defaults to a
+        single argument, ``$SHELL``.
+
+        It invokes :func:`~opslib.local.run` with the arguments.
+        """
+
         if not args:
             shell = os.environ.get("SHELL", "sh")
             args = [shell]
@@ -167,6 +174,13 @@ class SshHost(BaseHost):
             )
 
     def run(self, *args, **kwargs):
+        """
+        Run a command on the remote host.
+
+        It uses :func:`~opslib.local.run` to invoke ``ssh`` with the given
+        arguments.
+        """
+
         hostname = evaluate(self.hostname)
         if self.username:
             hostname = f"{self.username}@{hostname}"
@@ -197,7 +211,8 @@ class File(Component):
 
     :param host: The parent host.
     :param path: Absolute path of the file.
-    :param content: Content to write to the file. May be ``str`` or ``bytes``.
+    :param content: Content to write to the file. May be :class:`str` or
+                    :class:`bytes`. May be :class:`~opslib.lazy.Lazy`.
     :param mode: Unix file permissions (optional).
     :param owner: The name of the user owning the directory (optional).
     :param group: The name of the group owning the directory (optional).
@@ -300,6 +315,11 @@ class Directory(Component):
         )
 
     def subdir(self, name, **kwargs):
+        """
+        Shorthand function that returns a :class:`Directory` with the same
+        host, and the path being a child path of ``self.path``.
+        """
+
         return Directory(
             host=self.host,
             path=self.path / name,
@@ -307,9 +327,18 @@ class Directory(Component):
         )
 
     def __truediv__(self, name):
+        """
+        Same as :meth:`subdir`.
+        """
+
         return self.subdir(name)
 
     def file(self, name, **kwargs):
+        """
+        Shorthand function that returns a :class:`File` with the same
+        host, and the path being a child path of ``self.path``.
+        """
+
         return File(
             host=self.host,
             path=self.path / name,
@@ -350,6 +379,13 @@ class Command(Component):
         self.state["must-run"] = True
 
     def run(self, **kwargs):
+        """
+        Run the command defined by this component.
+
+        :param kwargs: Extra keyword arguments to be forwarded to the ``run``
+                       method of the host.
+        """
+
         return self.host.run(
             *self.props.args,
             input=self.props.input,

@@ -2,7 +2,10 @@ from functools import cached_property, wraps
 
 
 class NotAvailable(KeyError):
-    """Value is not available at this time"""
+    """
+    The NotAvailable exception indicates that the requested :class:`Lazy` value
+    depends on some data that is not available at this time.
+    """
 
 
 class Lazy:
