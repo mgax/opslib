@@ -3,6 +3,7 @@ import os
 from base64 import b64encode
 from collections.abc import Callable
 from pathlib import Path
+from typing import Optional
 
 import click
 import yaml
@@ -33,8 +34,10 @@ class Cloudflare(Component):
     class Props:
         account_id = Prop(str)
         zone_id = Prop(str)
+        zone_name = Prop(str)
         name = Prop(str)
         secret = Prop(str)
+        allow_emails = Prop(Optional[list])
 
     def build(self):
         self.provider = TerraformProvider(
@@ -63,6 +66,31 @@ class Cloudflare(Component):
                 proxied=True,
             ),
         )
+
+        if self.props.allow_emails is not None:
+            self.access_application = self.provider.resource(
+                type="cloudflare_access_application",
+                body=dict(
+                    zone_id=self.props.zone_id,
+                    name=self.props.name,
+                    domain=f"{self.props.name}.{self.props.zone_name}",
+                ),
+                output=["id"],
+            )
+
+            self.policy = self.provider.resource(
+                type="cloudflare_access_policy",
+                body=dict(
+                    application_id=self.access_application.output["id"],
+                    zone_id=self.props.zone_id,
+                    name="Login using email",
+                    include=dict(
+                        email=self.props.allow_emails,
+                    ),
+                    decision="allow",
+                    precedence=1,
+                ),
+            )
 
     @lazy_property
     def cname_value(self):
@@ -145,13 +173,17 @@ class Demo(Stack):
         host = LocalHost()
         self.directory = host.directory(Path(__file__).parent / "target")
 
+        allow_emails_env = os.environ.get("CLOUDFLARE_ALLOW_EMAILS")
+
         self.cloudflare = Cloudflare(
             account_id=os.environ["CLOUDFLARE_ACCOUNT_ID"],
             zone_id=os.environ["CLOUDFLARE_ZONE_ID"],
+            zone_name=os.environ["CLOUDFLARE_ZONE_NAME"],
             name=os.environ["CLOUDFLARE_TUNNEL_NAME"],
             secret=b64encode(
                 os.environ["CLOUDFLARE_TUNNEL_SECRET"].encode("utf8")
             ).decode("utf8"),
+            allow_emails=allow_emails_env.split(",") if allow_emails_env else None,
         )
 
         self.app = App(
