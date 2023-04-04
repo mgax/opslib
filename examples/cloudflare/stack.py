@@ -187,7 +187,7 @@ class Demo(Stack):
         )
 
         self.app = App(
-            directory=self.directory / "app",
+            directory=self.directory / "opslib-examples-cloudflare",
             sidecar=self.cloudflare.sidecar,
         )
 

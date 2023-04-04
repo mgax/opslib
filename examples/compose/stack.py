@@ -112,7 +112,7 @@ class Demo(Stack):
         host = LocalHost()
         self.directory = host.directory(Path(__file__).parent / "target")
         self.app = App(
-            directory=self.directory / "app",
+            directory=self.directory / "opslib-examples-compose",
             listen="3000",
         )
 
