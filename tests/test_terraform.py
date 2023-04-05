@@ -37,6 +37,7 @@ def local_stack(Stack, tmp_path):
     return create_local_stack
 
 
+@pytest.mark.slow
 def test_deploy(local_stack):
     stack = local_stack()
     results = apply(stack, deploy=True)
@@ -47,6 +48,7 @@ def test_deploy(local_stack):
     assert not results[stack.file].changed
 
 
+@pytest.mark.slow
 def test_diff(local_stack, capsys):
     stack = local_stack()
     results = apply(stack, deploy=True, dry_run=True)
@@ -59,6 +61,7 @@ def test_diff(local_stack, capsys):
     assert f'+ filename             = "{stack.path}"' in captured.out
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("different", [True, False])
 def test_refresh(local_stack, different):
     stack = local_stack()
@@ -69,6 +72,7 @@ def test_refresh(local_stack, different):
     assert results[stack.file].changed == different
 
 
+@pytest.mark.slow
 def test_cli(local_stack, capfd):
     cli = get_main_cli(local_stack)
     capfd.readouterr()
@@ -77,6 +81,7 @@ def test_cli(local_stack, capfd):
     assert "Terraform will perform the following actions:" in captured.out
 
 
+@pytest.mark.slow
 def test_no_global_plugin_cache(local_stack, monkeypatch):
     monkeypatch.delenv("TF_PLUGIN_CACHE_DIR", raising=False)
     stack = local_stack()
@@ -97,12 +102,14 @@ def test_no_global_plugin_cache(local_stack, monkeypatch):
     )
 
 
+@pytest.mark.slow
 def test_output(local_stack):
     stack = local_stack(output=["content_sha256"])
     apply(stack, deploy=True)
     assert evaluate(stack.file.output["content_sha256"]) == sha256(b"world").hexdigest()
 
 
+@pytest.mark.slow
 def test_output_not_available(Stack):
     stack = Stack()
     stack.provider = TerraformProvider(
@@ -126,6 +133,7 @@ def test_output_not_available(Stack):
     )
 
 
+@pytest.mark.slow
 def test_import_resource(Stack):
     stack = Stack()
     stack.time = TerraformResource(
@@ -139,6 +147,7 @@ def test_import_resource(Stack):
     assert evaluate(stack.time.output["id"]) == value
 
 
+@pytest.mark.slow
 def test_provider_config(Stack, tmp_path):
     stack = Stack()
     stack.provider = TerraformProvider(
