@@ -118,3 +118,40 @@ props, and set as ``self.props``:
     AttributeError: 'Cat' object has no attribute 'play'
 
 Oscar doesn't have the ``play`` attribute because he's too sleepy.
+
+Lazy values
+-----------
+
+Sometimes a value is not available when a component is defined. It might depend
+on another component that will be defined later, or on remote state. The
+:class:`~opslib.lazy.Lazy` class wraps such values, and the
+:func:`~opslib.lazy.evaluate` function unwraps them. Multiple calls of
+``evaluate`` on the same lazy value will result in a single evaluation; the
+result is cached.
+
+.. code-block:: python
+
+    from opslib.lazy import Lazy, evaluate
+
+    def get_value():
+        print("get_value was called")
+        return "meow"
+
+    print("Preparing a lazy value")
+    cat = Lazy(get_value)
+    print("Evaluating ...")
+    value = evaluate(cat)
+    print("Value is", value)
+
+This should output:
+
+.. code-block:: none
+
+    Preparing a lazy value
+    Evaluating ...
+    get_value was called
+    Value is meow
+
+Component props will accept lazy values if they are defined with ``lazy=True``.
+If so, the lazy object is wrapped again, and its type is checked when it's
+evaluated.
