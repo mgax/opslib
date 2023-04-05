@@ -19,7 +19,12 @@ opslib - init
 opslib - deploy
 ```
 
-The backup script invokes a pre-command (which happens to be `fortune`) and then calls `restic` to back up the target directory. Let's run it:
+The backup script does a few things:
+1. Run a pre-command. This is useful to e.g. run a database dump, since it's better to back up an SQL dump than the database's data directory.
+1. Set up environment variables with secrets. The script is created with permissions `700` but keep in mind secrets will be stored cleartext in the script.
+1. Run `restic backup` with the specified paths and excludes.
+
+Let's run the script:
 
 ```
 $ ./demo/backup
