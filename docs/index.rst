@@ -8,5 +8,6 @@ Welcome to opslib's documentation!
    tutorial/index
    installation
    components
+   cli
    contributing
    api
