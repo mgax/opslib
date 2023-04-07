@@ -1,7 +1,10 @@
+import json
+
 import click
 import yaml
 
 from opslib.components import Component
+from opslib.extras.http import HttpClient
 from opslib.lazy import evaluate, lazy_property
 from opslib.places import Directory
 from opslib.props import Prop
@@ -208,6 +211,13 @@ class Mailu(Component):
     def compose_args(self):
         return ["docker", "compose", "--project-directory", self.directory.path]
 
+    @property
+    def api(self):
+        return HttpClient(
+            f"https://{self.domain}/api/v1",
+            headers={"Authorization": evaluate(self.api_token.value)},
+        )
+
     def add_commands(self, cli):
         @cli.command(context_settings=dict(ignore_unknown_options=True))
         @click.argument("args", nargs=-1, type=click.UNPROCESSED)
@@ -228,3 +238,8 @@ class Mailu(Component):
                 capture_output=False,
                 exit=True,
             )
+
+        @cli.command()
+        @click.argument("path")
+        def api_get(path):
+            print(json.dumps(self.api.get(path).json, indent=2))
