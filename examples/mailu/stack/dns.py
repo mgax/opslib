@@ -19,6 +19,9 @@ DNS_RECORDS = {
     "spf": ("@", "TXT"),
     # XXX there is no mechanism for updating the TLSA record when the cert is renewed
     # "tlsa": ("_25._tcp.@", "TLSA"),
+    "dkim": ("dkim._domainkey.@", "TXT"),
+    "dmarc": ("_dmarc.@", "TXT"),
+    "dmarc_report": ("@_report._dmarc.@", "TXT"),
 }
 
 
@@ -101,7 +104,7 @@ class MailDnsRecords(Component):
                     )
 
                 else:
-                    body["value"] = value.strip('"')
+                    body["value"] = value.strip('"').replace('" "', "")
 
                 return body
 
@@ -137,9 +140,9 @@ class MailDnsRecords(Component):
             def dig(name, type):
                 cmd = ["dig", "+noall", "+answer"]
                 dig_result = run(*cmd, type, self.fqdn(name), f"@{server}")
-                return re.sub(r"\s+", " ", dig_result.output.strip())
+                return re.sub(r"\s+", " ", dig_result.output.strip()).replace('" "', "")
 
-            expected = "".join(self.get_records().values())
+            expected = "".join(self.get_records().values()).replace('" "', "")
             actual = "".join(f"{dig(*DNS_RECORDS[key])}\n" for key in DNS_RECORDS)
             result = Result(
                 changed=actual != expected,

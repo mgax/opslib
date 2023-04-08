@@ -8,6 +8,8 @@ from opslib.extras.http import HttpClient
 from opslib.lazy import evaluate, lazy_property
 from opslib.places import Directory
 from opslib.props import Prop
+from opslib.results import Result
+from opslib.state import JsonState
 
 from .tokens import RandomToken
 
@@ -49,6 +51,10 @@ class Mailu(Component):
                 self.env_file,
                 self.compose_file,
             ],
+        )
+
+        self.dkim = DomainKeys(
+            mailu=self,
         )
 
     @lazy_property
@@ -243,3 +249,27 @@ class Mailu(Component):
         @click.argument("path")
         def api_get(path):
             print(json.dumps(self.api.get(path).json, indent=2))
+
+
+class DomainKeys(Component):
+    class Props:
+        mailu = Prop(Mailu)
+
+    state = JsonState()
+
+    def refresh(self):
+        mailu = self.props.mailu
+        data = mailu.api.get(f"/domain/{mailu.domain}").json
+        self.state["generated"] = data["dns_dkim"] is not None
+        return Result(not self.state["generated"])
+
+    def deploy(self, dry_run=False):
+        if self.state.get("generated"):
+            return Result()
+
+        if not dry_run:
+            mailu = self.props.mailu
+            mailu.api.post(f"/domain/{mailu.domain}/dkim")
+            self.refresh()
+
+        return Result(changed=True)
