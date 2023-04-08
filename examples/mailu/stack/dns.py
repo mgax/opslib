@@ -171,11 +171,13 @@ class MailDnsRecords(Component):
 
     def add_commands(self, cli):
         @cli.command()
-        @click.argument("server")
+        @click.argument("server", default="")
         def check(server):
             def dig(name, type):
                 cmd = ["dig", "+noall", "+answer"]
-                dig_result = run(*cmd, type, self.fqdn(name), f"@{server}")
+                if server:
+                    cmd.append(f"@{server}")
+                dig_result = run(*cmd, type, self.fqdn(name))
                 return re.sub(r"\s+", " ", dig_result.output.strip()).replace('" "', "")
 
             expected = "".join(
