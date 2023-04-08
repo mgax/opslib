@@ -105,7 +105,7 @@ class TerraformResource(Component):
     :param type: Type of resource, e.g. ``"aws_vpc"``.
     :param body: Arguments of the resource (:class:`dict`). Consult the
                  provider's documentation for the arguments supported by each
-                 resource.
+                 resource. May be :class:`~opslib.lazy.Lazy`.
     :param output: List of attributes exported by the resource to be fetched
                    from Terraform. They are available on the ``output``
                    property. (optional)
@@ -114,7 +114,7 @@ class TerraformResource(Component):
     class Props:
         provider = Prop(Optional[TerraformProvider])
         type = Prop(str)
-        body = Prop(dict)
+        body = Prop(dict, lazy=True)
         output = Prop(Optional[list])
 
     uptodate = UpToDate()

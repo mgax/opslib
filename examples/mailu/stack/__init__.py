@@ -2,7 +2,7 @@ import os
 
 from opslib.components import Stack
 
-from .cloudflare import Cloudflare
+from .dns import Cloudflare, MailDnsRecords
 from .hetzner import VPS
 from .mailu import Mailu
 
@@ -19,6 +19,7 @@ class MailuExample(Stack):
         self.cloudflare = Cloudflare(
             account_id=os.environ["CLOUDFLARE_ACCOUNT_ID"],
             zone_id=os.environ["CLOUDFLARE_ZONE_ID"],
+            zone_name=zone_name,
             dns_name=dns_name,
             public_address=self.vps.server.output["ipv4_address"],
         )
@@ -29,6 +30,11 @@ class MailuExample(Stack):
             directory=self.vps.host.directory("/opt/mailu"),
             volumes=self.vps.host.directory("/opt/volumes"),
             public_address=self.vps.server.output["ipv4_address"],
+        )
+
+        self.dns = MailDnsRecords(
+            mailu=self.mailu,
+            cloudflare=self.cloudflare,
         )
 
 
