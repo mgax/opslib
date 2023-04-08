@@ -16,18 +16,14 @@ from .tokens import RandomToken
 
 class Mailu(Component):
     class Props:
-        zone_name = Prop(str)
-        dns_name = Prop(str)
+        hostname = Prop(str)
+        main_domain = Prop(str)
         directory = Prop(Directory)
         volumes = Prop(Directory)
         public_address = Prop(str, lazy=True)
 
     mailu_version = "2.0"
     ports = [80, 443, 25, 465, 587, 110, 995, 143, 993]
-
-    @property
-    def domain(self):
-        return f"{self.props.dns_name}.{self.props.zone_name}"
 
     def build(self):
         self.directory = self.props.directory
@@ -190,8 +186,8 @@ class Mailu(Component):
         vars = dict(
             SECRET_KEY=self.secret_key.value,
             SUBNET="192.168.203.0/24",
-            DOMAIN=self.domain,
-            HOSTNAMES=self.domain,
+            DOMAIN=self.props.main_domain,
+            HOSTNAMES=self.props.hostname,
             POSTMASTER="admin",
             TLS_FLAVOR="letsencrypt",
             ADMIN="true",
@@ -220,7 +216,7 @@ class Mailu(Component):
     @property
     def api(self):
         return HttpClient(
-            f"https://{self.domain}/api/v1",
+            f"https://{self.props.main_domain}/api/v1",
             headers={"Authorization": evaluate(self.api_token.value)},
         )
 
@@ -259,7 +255,7 @@ class DomainKeys(Component):
 
     def refresh(self):
         mailu = self.props.mailu
-        data = mailu.api.get(f"/domain/{mailu.domain}").json
+        data = mailu.api.get(f"/domain/{mailu.props.main_domain}").json
         self.state["generated"] = data["dns_dkim"] is not None
         return Result(not self.state["generated"])
 
@@ -269,7 +265,7 @@ class DomainKeys(Component):
 
         if not dry_run:
             mailu = self.props.mailu
-            mailu.api.post(f"/domain/{mailu.domain}/dkim")
+            mailu.api.post(f"/domain/{mailu.props.main_domain}/dkim")
             self.refresh()
 
         return Result(changed=True)

@@ -3,7 +3,7 @@ import re
 import click
 
 from opslib.components import Component
-from opslib.lazy import Lazy
+from opslib.lazy import Lazy, evaluate, lazy_property
 from opslib.local import run
 from opslib.operations import Printer
 from opslib.props import Prop
@@ -33,13 +33,11 @@ DNS_RECORDS = {
 }
 
 
-class Cloudflare(Component):
+class CloudflareZone(Component):
     class Props:
         account_id = Prop(str)
         zone_id = Prop(str)
         zone_name = Prop(str)
-        dns_name = Prop(str)
-        public_address = Prop(str, lazy=True)
 
     def build(self):
         self.provider = TerraformProvider(
@@ -48,141 +46,138 @@ class Cloudflare(Component):
             version="~> 4.2",
         )
 
-        self.a_record = self.record(
-            type="A",
-            name=self.props.dns_name,
-            value=self.props.public_address,
-        )
+    def record(self, fqdn, type, body=None):
+        def get_body():
+            return dict(
+                zone_id=self.props.zone_id,
+                name=self.name_in_zone(fqdn),
+                type=type,
+                proxied=False,
+                **evaluate(body),
+            )
 
-    def record(self, type, name, value):
         return self.provider.resource(
             type="cloudflare_record",
-            body=dict(
-                zone_id=self.props.zone_id,
-                type=type,
-                name=name,
-                value=value,
-                proxied=False,
-            ),
+            body=Lazy(get_body),
         )
+
+    def name_in_zone(self, fqdn):
+        if fqdn == self.props.zone_name:
+            return "@"
+
+        suffix = f".{self.props.zone_name}"
+        assert fqdn.endswith(suffix), f"{fqdn!r} not in zone {self.props.zone_name!r}"
+        return fqdn[: -len(suffix)]
 
 
 class MailDnsRecords(Component):
     class Props:
         mailu = Prop(Mailu)
-        cloudflare = Prop(Cloudflare)
+        zone = Prop(CloudflareZone)
 
     state = JsonState()
 
     def build(self):
-        cloudflare = self.props.cloudflare
-        records = self.get_records()
+        zone = self.props.zone
 
         def dns_record(key):
-            name, type = DNS_RECORDS[key]
-            name = self.fqdn(name)
+            name_format, type = DNS_RECORDS[key]
+            name = self.get_name(name_format)
 
             def get_body():
-                record = records[key]
-                (_name, _ttl, _in, _type, value) = record.split(" ", 4)
-                if (_name, _type) != (name, type):
-                    raise ValueError(f"Unexpected record for {key!r}: {record!r}")
+                line = evaluate(self.mailu_records)[key]
+                (_name, _ttl, _in, _type, _value) = line.split(" ", 4)
+                if (_name, _in, _type) != (name, "IN", type):
+                    raise ValueError(f"Unexpected record for {key!r}: {line!r}")
 
-                body = dict(
-                    zone_id=cloudflare.props.zone_id,
-                    type=type,
-                    name=self.reverse_fqdn(name),
-                    ttl=int(_ttl),
-                )
+                ttl = int(_ttl)
 
                 if type == "MX":
-                    (_priority, _value) = value.split(" ", 1)
-                    body["data"] = dict(
+                    (_priority, value) = _value.split(" ", 1)
+                    return dict(
+                        ttl=ttl,
                         priority=int(_priority),
-                        value=_value,
+                        value=value,
                     )
 
-                elif type == "TLSA":
-                    (_usage, _selector, _matching_type, _hash) = value.split()
-                    body["data"] = dict(
-                        usage=int(_usage),
-                        selector=int(_selector),
-                        matching_type=int(_matching_type),
-                        certificate=_hash,
+                if type == "TLSA":
+                    (_usage, _selector, _matching_type, _hash) = _value.split()
+                    return dict(
+                        ttl=ttl,
+                        data=dict(
+                            usage=int(_usage),
+                            selector=int(_selector),
+                            matching_type=int(_matching_type),
+                            certificate=_hash,
+                        ),
                     )
 
-                elif type == "SRV":
+                if type == "SRV":
                     (_service, _proto, _name) = name.split(".", 2)
-                    (_priority, _weight, _port, _target) = value.split()
-                    body["data"] = dict(
-                        service=_service,
-                        proto=_proto,
-                        name=_name,
-                        priority=_priority,
-                        weight=_weight,
-                        port=_port,
-                        target=_target,
+                    (_priority, _weight, _port, _target) = _value.split()
+                    return dict(
+                        ttl=ttl,
+                        data=dict(
+                            service=_service,
+                            proto=_proto,
+                            name=_name.rstrip("."),
+                            priority=_priority,
+                            weight=_weight,
+                            port=_port,
+                            target=_target.rstrip("."),
+                        ),
                     )
 
-                else:
-                    body["data"] = dict(
-                        value=value.strip('"').replace('" "', ""),
-                    )
+                return dict(
+                    ttl=ttl,
+                    value=_value.strip('"').replace('" "', ""),
+                )
 
-                return body
-
-            return cloudflare.provider.resource(
-                type="cloudflare_record",
+            return zone.record(
+                fqdn=name.rstrip("."),
+                type=type,
                 body=Lazy(get_body),
             )
 
         for key in DNS_RECORDS:
             setattr(self, key, dns_record(key))
 
-    def get_records(self):
+    @lazy_property
+    def mailu_records(self):
         mailu = self.props.mailu
-        data = mailu.api.get(f"/domain/{mailu.domain}").json
+        data = mailu.api.get(f"/domain/{mailu.props.main_domain}").json
         autoconfig_map = {
             record.split()[0]: record for record in data["dns_autoconfig"]
         }
 
         rv = {}
 
-        for key, (name, _) in DNS_RECORDS.items():
+        for key, (name_format, _) in DNS_RECORDS.items():
             if key.startswith("autoconfig_"):
-                rv[key] = autoconfig_map[self.fqdn(name)]
+                rv[key] = autoconfig_map[self.get_name(name_format)]
 
             else:
                 rv[key] = data[f"dns_{key}"]
 
         return rv
 
-    def fqdn(self, name):
-        return name.replace("@", f"{self.props.mailu.domain}.")
-
-    def reverse_fqdn(self, name):
-        domain = f"{self.props.cloudflare.props.zone_name}."
-        if name == domain:
-            return "@"
-
-        suffix = f".{domain}"
-        assert name.endswith(suffix)
-        return name[: -len(suffix)]
+    def get_name(self, name_format):
+        return name_format.replace("@", f"{self.props.mailu.props.main_domain}.")
 
     def add_commands(self, cli):
         @cli.command()
         @click.argument("server", default="")
         def check(server):
-            def dig(name, type):
+            def dig(name_format, type):
                 cmd = ["dig", "+noall", "+answer"]
                 if server:
                     cmd.append(f"@{server}")
-                dig_result = run(*cmd, type, self.fqdn(name))
+                dig_result = run(*cmd, type, self.get_name(name_format))
                 return re.sub(r"\s+", " ", dig_result.output.strip()).replace('" "', "")
 
             expected = "".join(
                 record.replace('" "', "") + "\n"
-                for record in self.get_records().values()
+                for record in evaluate(self.mailu_records).values()
             )
             actual = "".join(f"{dig(*DNS_RECORDS[key])}\n" for key in DNS_RECORDS)
             result = Result(
@@ -190,3 +185,5 @@ class MailDnsRecords(Component):
                 output=diff("dns", expected, actual),
             )
             Printer(self).print_result(result)
+            if not result.changed:
+                click.echo(actual)
