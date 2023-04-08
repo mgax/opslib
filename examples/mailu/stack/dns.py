@@ -22,6 +22,14 @@ DNS_RECORDS = {
     "dkim": ("dkim._domainkey.@", "TXT"),
     "dmarc": ("_dmarc.@", "TXT"),
     "dmarc_report": ("@_report._dmarc.@", "TXT"),
+    "autoconfig_imap": ("_imap._tcp.@", "SRV"),
+    "autoconfig_pop3": ("_pop3._tcp.@", "SRV"),
+    "autoconfig_submission": ("_submission._tcp.@", "SRV"),
+    "autoconfig_autodiscover": ("_autodiscover._tcp.@", "SRV"),
+    "autoconfig_submissions": ("_submissions._tcp.@", "SRV"),
+    "autoconfig_imaps": ("_imaps._tcp.@", "SRV"),
+    "autoconfig_pop3s": ("_pop3s._tcp.@", "SRV"),
+    "autoconfig_cname": ("autoconfig.@", "CNAME"),
 }
 
 
@@ -76,7 +84,7 @@ class MailDnsRecords(Component):
 
             def get_body():
                 record = records[key]
-                (_name, _ttl, _in, _type, value) = record.strip().split(" ", 4)
+                (_name, _ttl, _in, _type, value) = record.split(" ", 4)
                 if (_name, _type) != (name, type):
                     raise ValueError(f"Unexpected record for {key!r}: {record!r}")
 
@@ -89,7 +97,7 @@ class MailDnsRecords(Component):
 
                 if type == "MX":
                     (_priority, _value) = value.split(" ", 1)
-                    body.update(
+                    body["data"] = dict(
                         priority=int(_priority),
                         value=_value,
                     )
@@ -103,8 +111,23 @@ class MailDnsRecords(Component):
                         certificate=_hash,
                     )
 
+                elif type == "SRV":
+                    (_service, _proto, _name) = name.split(".", 2)
+                    (_priority, _weight, _port, _target) = value.split()
+                    body["data"] = dict(
+                        service=_service,
+                        proto=_proto,
+                        name=_name,
+                        priority=_priority,
+                        weight=_weight,
+                        port=_port,
+                        target=_target,
+                    )
+
                 else:
-                    body["value"] = value.strip('"').replace('" "', "")
+                    body["data"] = dict(
+                        value=value.strip('"').replace('" "', ""),
+                    )
 
                 return body
 
@@ -119,7 +142,20 @@ class MailDnsRecords(Component):
     def get_records(self):
         mailu = self.props.mailu
         data = mailu.api.get(f"/domain/{mailu.domain}").json
-        return {key: f"{data[f'dns_{key}']}\n" for key in DNS_RECORDS}
+        autoconfig_map = {
+            record.split()[0]: record for record in data["dns_autoconfig"]
+        }
+
+        rv = {}
+
+        for key, (name, _) in DNS_RECORDS.items():
+            if key.startswith("autoconfig_"):
+                rv[key] = autoconfig_map[self.fqdn(name)]
+
+            else:
+                rv[key] = data[f"dns_{key}"]
+
+        return rv
 
     def fqdn(self, name):
         return name.replace("@", f"{self.props.mailu.domain}.")
@@ -142,7 +178,10 @@ class MailDnsRecords(Component):
                 dig_result = run(*cmd, type, self.fqdn(name), f"@{server}")
                 return re.sub(r"\s+", " ", dig_result.output.strip()).replace('" "', "")
 
-            expected = "".join(self.get_records().values()).replace('" "', "")
+            expected = "".join(
+                record.replace('" "', "") + "\n"
+                for record in self.get_records().values()
+            )
             actual = "".join(f"{dig(*DNS_RECORDS[key])}\n" for key in DNS_RECORDS)
             result = Result(
                 changed=actual != expected,
