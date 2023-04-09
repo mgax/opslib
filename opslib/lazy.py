@@ -61,7 +61,7 @@ def lazy_property(func):
     object, that invokes the method when evaluated.
     """
 
-    @property
+    @cached_property
     @wraps(func)
     def getter(self):
         def wrapper():

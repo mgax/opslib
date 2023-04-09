@@ -47,19 +47,21 @@ def test_lazy_only_evaluated_once():
 
 def test_lazy_property():
     class Bench:
-        called = False
+        called = 0
 
         @lazy_property
         def foo(self):
-            self.called = True
+            self.called += 1
             return "bar"
 
     bench = Bench()
-    lazy = bench.foo
     assert not bench.called
-    assert isinstance(lazy, Lazy)
-    assert evaluate(lazy) == "bar"
-    assert bench.called
+    assert isinstance(bench.foo, Lazy)
+    assert evaluate(bench.foo) == "bar"
+    assert bench.called == 1
+    evaluate(bench.foo)
+    evaluate(bench.foo)
+    assert bench.called == 1
 
 
 @pytest.mark.parametrize(
