@@ -10,7 +10,7 @@ from opslib.terraform import TerraformProvider
 
 class VPS(Component):
     class Props:
-        name = Prop(str)
+        hostname = Prop(str)
 
     def build(self):
         self.provider = TerraformProvider(
@@ -31,13 +31,22 @@ class VPS(Component):
         self.server = self.provider.resource(
             type="hcloud_server",
             body=dict(
-                name=self.props.name,
+                name=self.props.hostname,
                 server_type="cx11",
                 image="debian-11",
                 location="hel1",
                 ssh_keys=[self.ssh_key.output["id"]],
             ),
-            output=["ipv4_address"],
+            output=["id", "ipv4_address"],
+        )
+
+        self.reverse_dns = self.provider.resource(
+            type="hcloud_rdns",
+            body=dict(
+                server_id=self.server.output["id"],
+                ip_address=self.server.output["ipv4_address"],
+                dns_ptr=self.props.hostname,
+            ),
         )
 
         self.install_docker = self.host.ansible_action(

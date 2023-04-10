@@ -14,7 +14,7 @@ class MailuExample(Stack):
         main_domain = os.environ["MAILU_DOMAIN"]
 
         self.vps = VPS(
-            name="opslib-example-mailu",
+            hostname=hostname,
         )
 
         self.zone = CloudflareZone(
