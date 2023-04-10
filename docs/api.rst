@@ -108,5 +108,8 @@ Terraform
 .. autoclass:: TerraformResource
    :members: import_resource, output, run
 
+.. autoclass:: TerraformDataSource
+   :members: output, run
+
 .. autoclass:: TerraformResult
    :members:

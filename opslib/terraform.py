@@ -93,8 +93,92 @@ class TerraformProvider(Component):
             **props,
         )
 
+    def data(self, **props):
+        """
+        Shorthand method to create a :class:`TerraformDataSource`, with
+        ``provider`` set to this component.
+        """
 
-class TerraformResource(Component):
+        return TerraformDataSource(
+            provider=self,
+            **props,
+        )
+
+
+class _TerraformComponent(Component):
+    class Props:
+        provider = Prop(Optional[TerraformProvider])
+        type = Prop(str)
+        body = Prop(dict, lazy=True)
+        output = Prop(Optional[list])
+
+    @cached_property
+    def tf_path(self):
+        return self._meta.statedir.path / "terraform"
+
+    def _run(self, *args, **kwargs):
+        extra_env = {"TF_IN_AUTOMATION": "true"}
+        provider = self.props.provider
+        if provider and not os.environ.get("TF_PLUGIN_CACHE_DIR"):
+            extra_env["TF_PLUGIN_CACHE_DIR"] = str(provider.plugin_cache_path)
+
+        return run("terraform", *args, **kwargs, cwd=self.tf_path, extra_env=extra_env)
+
+    def _init(self):
+        self.tf_path.mkdir(exist_ok=True, mode=0o700)
+        (self.tf_path / "main.tf.json").write_text(json.dumps(self.config, indent=2))
+        self._run("init", "-upgrade")  # XXX not concurrency safe
+        self._init = lambda: None
+
+    def run(self, *args, terraform_init=True, **kwargs):
+        """
+        Run the ``terraform`` command with the given arguments.
+        """
+
+        if terraform_init:
+            self._init()
+        return self._run(*args, **kwargs)
+
+    @cached_property
+    def _output_values(self):
+        return json.loads(self.run("output", "-json", terraform_init=False).stdout)
+
+    @cached_property
+    def output(self):
+        """
+        Output values returned from Terraform.
+        """
+
+        def lazy_output(name):
+            def get_value():
+                try:
+                    if not self.tf_path.exists():
+                        raise KeyError
+
+                    output = self._output_values[name]
+
+                except KeyError:
+                    raise NotAvailable(f"{self!r}: output {name!r} not available")
+
+                return output["value"]
+
+            return Lazy(get_value)
+
+        return {name: lazy_output(name) for name in self.props.output}
+
+    def add_commands(self, cli):
+        @cli.command(
+            context_settings=dict(
+                ignore_unknown_options=True,
+                allow_interspersed_args=False,
+            )
+        )
+        @click.argument("args", nargs=-1, type=click.UNPROCESSED)
+        def terraform(args):
+            self.run(*args, capture_output=False, exit=True)
+
+
+class TerraformResource(_TerraformComponent):
     """
     The TerraformResource component creates a single Resource through
     Terraform.
@@ -111,17 +195,7 @@ class TerraformResource(Component):
                    property. (optional)
     """
 
-    class Props:
-        provider = Prop(Optional[TerraformProvider])
-        type = Prop(str)
-        body = Prop(dict, lazy=True)
-        output = Prop(Optional[list])
-
     uptodate = UpToDate()
-
-    @cached_property
-    def tf_path(self):
-        return self._meta.statedir.path / "terraform"
 
     @property
     @uptodate.snapshot
@@ -147,29 +221,6 @@ class TerraformResource(Component):
 
         return config
 
-    def _run(self, *args, **kwargs):
-        extra_env = {"TF_IN_AUTOMATION": "true"}
-        provider = self.props.provider
-        if provider and not os.environ.get("TF_PLUGIN_CACHE_DIR"):
-            extra_env["TF_PLUGIN_CACHE_DIR"] = str(provider.plugin_cache_path)
-
-        return run("terraform", *args, **kwargs, cwd=self.tf_path, extra_env=extra_env)
-
-    def _init(self):
-        self.tf_path.mkdir(exist_ok=True, mode=0o700)
-        (self.tf_path / "main.tf.json").write_text(json.dumps(self.config, indent=2))
-        self._run("init", "-upgrade")  # XXX not concurrency safe
-        self._init = lambda: None
-
-    def run(self, *args, terraform_init=True, **kwargs):
-        """
-        Run the ``terraform`` command with the given arguments.
-        """
-
-        if terraform_init:
-            self._init()
-        return self._run(*args, **kwargs)
-
     @uptodate.refresh
     def refresh(self):
         self.run("refresh")
@@ -187,37 +238,58 @@ class TerraformResource(Component):
 
         return self.run("import", f"{self.props.type}.thing", evaluate(resource_id))
 
-    @cached_property
-    def _output_values(self):
-        return json.loads(self.run("output", "-json", terraform_init=False).stdout)
 
-    @cached_property
-    def output(self):
-        """
-        Output values returned from Terraform.
-        """
+class TerraformDataSource(TerraformResource):
+    """
+    The TerraformDataSource component retrieves data through a Terraform data
+    source.
 
-        def lazy_output(name):
-            def get_value():
-                try:
-                    output = self._output_values[name]
+    :param provider: The :class:`TerraformProvider` for this data source.
+                     Technically optional because some builtin data source
+                     types of Terraform don't belong to any provider.
+    :param type: Type of data source, e.g. ``"aws_vpc"``.
+    :param body: Arguments of the data source (:class:`dict`). Consult the
+                 provider's documentation for the arguments supported by each
+                 data source. May be :class:`~opslib.lazy.Lazy`.
+    :param output: List of attributes exported by the data source to be fetched
+                   from Terraform. They are available on the ``output``
+                   property. (optional)
+    """
 
-                except KeyError:
-                    raise NotAvailable(f"{self!r}: output {name!r} not available")
+    uptodate = UpToDate()
 
-                return output["value"]
-
-            return Lazy(get_value)
-
-        return {name: lazy_output(name) for name in self.props.output}
-
-    def add_commands(self, cli):
-        @cli.command(
-            context_settings=dict(
-                ignore_unknown_options=True,
-                allow_interspersed_args=False,
-            )
+    @property
+    @uptodate.snapshot
+    def config(self):
+        provider = self.props.provider
+        config = dict(
+            provider.config if provider else {},
+            data={
+                self.props.type: {
+                    "thing": evaluate(self.props.body),
+                },
+            },
         )
-        @click.argument("args", nargs=-1, type=click.UNPROCESSED)
-        def terraform(args):
-            self.run(*args, capture_output=False, exit=True)
+
+        if self.props.output:
+            config["output"] = {
+                key: {
+                    "value": f"${{data.{self.props.type}.thing.{key}}}",
+                    "sensitive": True,
+                }
+                for key in self.props.output
+            }
+
+        return config
+
+    @uptodate.refresh
+    def refresh(self):
+        self.run("refresh")
+        return TerraformResult(self.run("plan"))
+
+    @uptodate.deploy
+    def deploy(self, dry_run=False):
+        if dry_run:
+            return Result(changed=True)
+
+        return self.refresh()

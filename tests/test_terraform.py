@@ -168,3 +168,30 @@ def test_provider_config(Stack, tmp_path):
     # XXX for some reason, Terraform quotes our directory name
     [outfile] = (stack.resource.tf_path / '"opslib_resource_directory"').iterdir()
     assert json.loads(outfile.read_text())["values"]["number"]["number"] == "13"
+
+
+@pytest.mark.slow
+def test_data_source(Stack, tmp_path):
+    path = tmp_path / "hello.txt"
+    path.write_text("world")
+    stack = Stack()
+    stack.provider = TerraformProvider(
+        name="local",
+        source="hashicorp/local",
+        version="~> 2.3",
+    )
+    stack.source = stack.provider.data(
+        type="local_file",
+        body=dict(
+            filename=str(path),
+        ),
+        output=["content"],
+    )
+    init_statedir(stack)
+    with pytest.raises(NotAvailable) as error:
+        evaluate(stack.source.output["content"])
+    assert error.value.args == (
+        "<TerraformDataSource source>: output 'content' not available",
+    )
+    apply(stack, deploy=True)
+    assert evaluate(stack.source.output["content"]) == "world"
