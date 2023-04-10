@@ -10,11 +10,10 @@ The stack expects a few environment variables to be defined:
 
 ```env
 CLOUDFLARE_API_TOKEN=[api token]
-CLOUDFLARE_ACCOUNT_ID=[account id]
-CLOUDFLARE_ZONE_ID=[zone id]
 CLOUDFLARE_ZONE_NAME=example.com
 HCLOUD_TOKEN=[api token] # https://docs.hetzner.cloud/#getting-started
-MAILU_DNS_NAME=mailu
+MAILU_HOSTNAME=mailu.example.com
+MAILU_DOMAIN=example.com
 ```
 
 Make sure the Cloudflare token has "Zone - DNS - Edit" permission.
@@ -32,4 +31,4 @@ Create an initial admin user; replace `PASSWORD` with an initial password. Yes, 
 opslib mailu admin admin admin mailu.opslib.grep.ro PASSWORD
 ```
 
-Then go to the web admin at `https://{MAILU_DNS_NAME}.{CLOUDFLARE_ZONE_NAME}/admin`, log in, and change the password from the _Update password_ link in the menu on the left.
+Then go to the web admin at `https://{MAILU_HOSTNAME}/admin`, log in, and change the password from the _Update password_ link in the menu on the left.

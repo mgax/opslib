@@ -35,8 +35,6 @@ DNS_RECORDS = {
 
 class CloudflareZone(Component):
     class Props:
-        account_id = Prop(str)
-        zone_id = Prop(str)
         zone_name = Prop(str)
 
     def build(self):
@@ -46,10 +44,26 @@ class CloudflareZone(Component):
             version="~> 4.2",
         )
 
+        self.zone_lookup = self.provider.data(
+            type="cloudflare_zones",
+            body=dict(
+                filter=dict(
+                    name=self.props.zone_name,
+                ),
+            ),
+            output=["zones"],
+        )
+
+    @lazy_property
+    def zone_id(self):
+        zones = evaluate(self.zone_lookup.output["zones"])
+        assert len(zones) == 1, f"Expected one zone, found {len(zones)}: {zones!r}"
+        return zones[0]["id"]
+
     def record(self, fqdn, type, body=None):
         def get_body():
             return dict(
-                zone_id=self.props.zone_id,
+                zone_id=evaluate(self.zone_id),
                 name=self.name_in_zone(fqdn),
                 type=type,
                 proxied=False,

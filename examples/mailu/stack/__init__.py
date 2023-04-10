@@ -10,21 +10,19 @@ from .mailu import Mailu
 class MailuExample(Stack):
     def build(self):
         zone_name = os.environ["CLOUDFLARE_ZONE_NAME"]
-        dns_name = os.environ["MAILU_DNS_NAME"]
-        mail_domain = f"{dns_name}.{zone_name}"
+        hostname = os.environ["MAILU_HOSTNAME"]
+        main_domain = os.environ["MAILU_DOMAIN"]
 
         self.vps = VPS(
             name="opslib-example-mailu",
         )
 
         self.zone = CloudflareZone(
-            account_id=os.environ["CLOUDFLARE_ACCOUNT_ID"],
-            zone_id=os.environ["CLOUDFLARE_ZONE_ID"],
             zone_name=zone_name,
         )
 
         self.a_record = self.zone.record(
-            fqdn=mail_domain,
+            fqdn=main_domain,
             type="A",
             body=dict(
                 value=self.vps.server.output["ipv4_address"],
@@ -32,8 +30,8 @@ class MailuExample(Stack):
         )
 
         self.mailu = Mailu(
-            hostname=mail_domain,
-            main_domain=mail_domain,
+            hostname=hostname,
+            main_domain=main_domain,
             directory=self.vps.host.directory("/opt/mailu"),
             volumes=self.vps.host.directory("/opt/volumes"),
             public_address=self.vps.server.output["ipv4_address"],
