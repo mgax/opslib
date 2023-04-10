@@ -1,3 +1,4 @@
+import code
 import importlib
 import logging
 import os
@@ -22,6 +23,28 @@ def lookup(component, path):
     return component
 
 
+def interact(banner=None, local=None):
+    try:
+        hook = sys.__interactivehook__
+
+    except AttributeError:
+        pass
+
+    else:
+        hook()
+
+    try:
+        import readline
+        import rlcompleter
+
+        readline.set_completer(rlcompleter.Completer(local).complete)
+
+    except ImportError:
+        pass
+
+    code.interact(banner=banner, local=local)
+
+
 def get_cli(component):
     @click.group()
     def cli():
@@ -39,6 +62,10 @@ def get_cli(component):
     def ls():
         for child in component:
             click.echo(f"{child._meta.name}: {child!r}")
+
+    @cli.command()
+    def shell():
+        return interact(str(component), dict(self=component))
 
     @cli.command(
         "component",
