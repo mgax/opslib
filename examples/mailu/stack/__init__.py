@@ -2,6 +2,7 @@ import os
 
 from opslib.components import Stack
 
+from .backups import Backups
 from .dns import CloudflareZone, MailDnsRecords
 from .hetzner import VPS
 from .mailu import Mailu
@@ -12,6 +13,7 @@ class MailuExample(Stack):
         zone_name = os.environ["CLOUDFLARE_ZONE_NAME"]
         hostname = os.environ["MAILU_HOSTNAME"]
         main_domain = os.environ["MAILU_DOMAIN"]
+        restic_password = os.environ["RESTIC_PASSWORD"]
 
         self.vps = VPS(
             hostname=hostname,
@@ -40,6 +42,14 @@ class MailuExample(Stack):
         self.dns = MailDnsRecords(
             mailu=self.mailu,
             zone=self.zone,
+        )
+
+        self.backups = Backups(
+            directory=self.vps.host.directory("/opt/backups"),
+            b2_name=f"opslib-backups-{hostname.replace('.', '-')}",
+            restic_password=restic_password,
+            backup_paths=self.mailu.backup_paths,
+            backup_exclude=self.mailu.backup_exclude,
         )
 
 

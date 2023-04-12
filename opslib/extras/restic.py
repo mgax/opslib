@@ -46,7 +46,7 @@ class ResticRepository(Component):
             return Result(changed=True)
 
         def _run():
-            result = self.run("init", capture_output=False)
+            result = self.run("init", "--repository-version=1", capture_output=False)
             self.state["initialized"] = True
             return result
 
@@ -86,8 +86,8 @@ class ResticPlan(Component):
     class Props:
         repository = Prop(ResticRepository)
         precommands = Prop(list, default=[])
-        paths = Prop(list, default=[])
-        exclude = Prop(list, default=[])
+        paths = Prop(list, default=[], lazy=True)
+        exclude = Prop(list, default=[], lazy=True)
         preamble = Prop(str, default=BASH_PREAMBLE)
 
     @lazy_property
@@ -102,8 +102,10 @@ class ResticPlan(Component):
             out.write(f"export {key}={quote(value)}\n")
 
         cmd = ["exec", "restic", "backup"]
-        cmd += [quote(str(path)) for path in self.props.paths]
-        cmd += [f"--exclude={quote(str(path))}" for path in self.props.exclude]
+        cmd += [quote(str(path)) for path in evaluate(self.props.paths)]
+        cmd += [
+            f"--exclude={quote(str(path))}" for path in evaluate(self.props.exclude)
+        ]
         out.write(f"{' '.join(cmd)}\n")
 
         return out.getvalue()

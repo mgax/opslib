@@ -220,6 +220,25 @@ class Mailu(Component):
             headers={"Authorization": evaluate(self.api_token.value)},
         )
 
+    @property
+    def backup_paths(self):
+        volumes = self.volumes.path
+        return [
+            volumes / "data",
+            volumes / "mail",
+            volumes / "mailqueue",
+            volumes / "redis",
+            volumes / "webmail",
+        ]
+
+    @property
+    def backup_exclude(self):
+        volumes = self.volumes.path
+        return [
+            f"{volumes}/mail/**/xapian*",
+            f"{volumes}/mail/**/dovecot*",
+        ]
+
     def add_commands(self, cli):
         @cli.command(context_settings=dict(ignore_unknown_options=True))
         @click.argument("args", nargs=-1, type=click.UNPROCESSED)

@@ -12,8 +12,11 @@ The stack expects a few environment variables to be defined:
 CLOUDFLARE_API_TOKEN=[api token]
 CLOUDFLARE_ZONE_NAME=example.com
 HCLOUD_TOKEN=[api token] # https://docs.hetzner.cloud/#getting-started
+B2_APPLICATION_KEY_ID=[...]
+B2_APPLICATION_KEY=[...]
 MAILU_HOSTNAME=mailu.example.com
 MAILU_DOMAIN=example.com
+RESTIC_PASSWORD=[some random password]
 ```
 
 Make sure the Cloudflare token has "Zone - DNS - Edit" permission.
