@@ -153,6 +153,7 @@ def test_provider_config(Stack, tmp_path):
     stack.provider = TerraformProvider(
         name="tfcoremock",
         source="tfcoremock",
+        version="~> 0.1.3",
         config=dict(
             resource_directory="opslib_resource_directory",
         ),
