@@ -53,7 +53,7 @@ class VPS(Component):
             module="ansible.builtin.shell",
             args=dict(
                 cmd="curl -s https://get.docker.com | bash",
-                creates="/opt/bin/docker",
+                creates="/usr/bin/docker",
             ),
         )
 

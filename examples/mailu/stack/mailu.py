@@ -55,6 +55,9 @@ class Mailu(Component):
 
     @lazy_property
     def compose_content(self):
+        # Configuration generated with https://setup.mailu.io/2.0/ and adapted
+        # clamav is disabled to reduce memory requirements
+
         public_address = evaluate(self.props.public_address)
 
         content = dict(
@@ -252,7 +255,7 @@ class Mailu(Component):
 
         @cli.command(context_settings=dict(ignore_unknown_options=True))
         @click.argument("args", nargs=-1, type=click.UNPROCESSED)
-        def admin(args):
+        def run(args):
             """Run Mailu `admin` with the given arguments"""
             self.directory.host.run(
                 *[*self.compose_args, "exec", "admin", "flask", "mailu", *args],

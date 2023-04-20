@@ -102,6 +102,9 @@ class MailDnsRecords(Component):
                 line = evaluate(self.mailu_records)[key]
                 (_name, _ttl, _in, _type, _value) = line.split(" ", 4)
                 if (_name, _in, _type) != (name, "IN", type):
+                    # We need must careful with data from the Mailu API: if the
+                    # instance is compromised, it should not be able to set
+                    # random DNS records in our zone.
                     raise ValueError(f"Unexpected record for {key!r}: {line!r}")
 
                 ttl = int(_ttl)
