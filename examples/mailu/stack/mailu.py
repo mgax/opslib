@@ -219,7 +219,7 @@ class Mailu(Component):
     @property
     def api(self):
         return HttpClient(
-            f"https://{self.props.main_domain}/api/v1",
+            f"https://{self.props.hostname}/api/v1",
             headers={"Authorization": evaluate(self.api_token.value)},
         )
 

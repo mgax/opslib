@@ -22,7 +22,7 @@ We're going to deploy [Mailu](https://mailu.io), on a [Hetzner](https://www.hetz
     ```
 1. Create an initial admin user.
     ```shell
-    opslib mailu admin admin admin mailu.opslib.grep.ro {PASSWORD}
+    opslib mailu run admin admin $MAILU_DOMAIN {PASSWORD}
     ```
 1. Log into the web UI at `https://{MAILU_HOSTNAME}/admin`.
 
@@ -54,19 +54,19 @@ To check that DNS is configured correctly, the stack provides a CLI command:
 ```
 $ opslib dns check
 dns MailDnsRecords [ok]
-mailu.opslib.grep.ro. 600 IN MX 10 mailu.opslib.grep.ro.
-mailu.opslib.grep.ro. 600 IN TXT "v=spf1 mx a:mailu.opslib.grep.ro ~all"
-dkim._domainkey.mailu.opslib.grep.ro. 600 IN TXT "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA6Vrn9Jl/zhR55wXbCgvLq/NOF51oCG8dYZ/+kL6Uieodu2ofndM7syBL+rLuqiCyCK+LufQonlzSOhOM5pTQwQ1K3j5Ryn0+x7j3R+UtAELdYYWirAkuN6UDLHK8IknnnAAoeAziIW9up4X6c/8CMgofSSN0UzgZnjR3kgWsIanKSEn1ZSPRF+5LRbvlM2eV2w1N7k51ydtmknEvHt69uNdMBoqlLIU5VekrbNMtRZiXCcANhMPqYSzMWV7eiqsEOQuOW/blsolsMQLgF9LQ/07mbzWCgJKzz893EgFrMmDpB4lAQB0fwtFe9bewAUGW8tpnyrZ8RHKcDYjF0EV0pwIDAQAB"
-_dmarc.mailu.opslib.grep.ro. 600 IN TXT "v=DMARC1; p=reject; rua=mailto:admin@mailu.opslib.grep.ro; ruf=mailto:admin@mailu.opslib.grep.ro; adkim=s; aspf=s"
-mailu.opslib.grep.ro._report._dmarc.mailu.opslib.grep.ro. 600 IN TXT "v=DMARC1"
-_imap._tcp.mailu.opslib.grep.ro. 600 IN SRV 20 1 143 mailu.opslib.grep.ro.
-_pop3._tcp.mailu.opslib.grep.ro. 600 IN SRV 20 1 110 mailu.opslib.grep.ro.
-_submission._tcp.mailu.opslib.grep.ro. 600 IN SRV 20 1 587 mailu.opslib.grep.ro.
-_autodiscover._tcp.mailu.opslib.grep.ro. 600 IN SRV 10 1 443 mailu.opslib.grep.ro.
-_submissions._tcp.mailu.opslib.grep.ro. 600 IN SRV 10 1 465 mailu.opslib.grep.ro.
-_imaps._tcp.mailu.opslib.grep.ro. 600 IN SRV 10 1 993 mailu.opslib.grep.ro.
-_pop3s._tcp.mailu.opslib.grep.ro. 600 IN SRV 10 1 995 mailu.opslib.grep.ro.
-autoconfig.mailu.opslib.grep.ro. 600 IN CNAME mailu.opslib.grep.ro.
+mailu.example.com. 600 IN MX 10 mailu.example.com.
+mailu.example.com. 600 IN TXT "v=spf1 mx a:mailu.example.com ~all"
+dkim._domainkey.mailu.example.com. 600 IN TXT "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA6Vrn9Jl/zhR55wXbCgvLq/NOF51oCG8dYZ/+kL6Uieodu2ofndM7syBL+rLuqiCyCK+LufQonlzSOhOM5pTQwQ1K3j5Ryn0+x7j3R+UtAELdYYWirAkuN6UDLHK8IknnnAAoeAziIW9up4X6c/8CMgofSSN0UzgZnjR3kgWsIanKSEn1ZSPRF+5LRbvlM2eV2w1N7k51ydtmknEvHt69uNdMBoqlLIU5VekrbNMtRZiXCcANhMPqYSzMWV7eiqsEOQuOW/blsolsMQLgF9LQ/07mbzWCgJKzz893EgFrMmDpB4lAQB0fwtFe9bewAUGW8tpnyrZ8RHKcDYjF0EV0pwIDAQAB"
+_dmarc.mailu.example.com. 600 IN TXT "v=DMARC1; p=reject; rua=mailto:admin@mailu.example.com; ruf=mailto:admin@mailu.example.com; adkim=s; aspf=s"
+mailu.example.com._report._dmarc.mailu.example.com. 600 IN TXT "v=DMARC1"
+_imap._tcp.mailu.example.com. 600 IN SRV 20 1 143 mailu.example.com.
+_pop3._tcp.mailu.example.com. 600 IN SRV 20 1 110 mailu.example.com.
+_submission._tcp.mailu.example.com. 600 IN SRV 20 1 587 mailu.example.com.
+_autodiscover._tcp.mailu.example.com. 600 IN SRV 10 1 443 mailu.example.com.
+_submissions._tcp.mailu.example.com. 600 IN SRV 10 1 465 mailu.example.com.
+_imaps._tcp.mailu.example.com. 600 IN SRV 10 1 993 mailu.example.com.
+_pop3s._tcp.mailu.example.com. 600 IN SRV 10 1 995 mailu.example.com.
+autoconfig.mailu.example.com. 600 IN CNAME mailu.example.com.
 ```
 
 ## Backups
@@ -109,10 +109,10 @@ opt/volumes/data/
 opt/volumes/data/instance
 opt/volumes/data/main.db
 opt/volumes/mail/
-opt/volumes/mail/admin@mailu.opslib.grep.ro/
-opt/volumes/mail/admin@mailu.opslib.grep.ro/.Drafts/
-opt/volumes/mail/admin@mailu.opslib.grep.ro/.Drafts/cur/
-opt/volumes/mail/admin@mailu.opslib.grep.ro/.Drafts/maildirfolder
+opt/volumes/mail/admin@mailu.example.com/
+opt/volumes/mail/admin@mailu.example.com/.Drafts/
+opt/volumes/mail/admin@mailu.example.com/.Drafts/cur/
+opt/volumes/mail/admin@mailu.example.com/.Drafts/maildirfolder
 [...]
 ```
 
@@ -156,6 +156,12 @@ RESTIC_PASSWORD=[...] # create a random password: `python3 -c "import secrets; p
 
 Make sure the Cloudflare token has "Zone - DNS - Edit" permission.
 
+### Mailu domain and hostname
+
+`MAILU_DOMAIN` refers to the domain where email addresses reside, e.g. `admin@example.com` has the domain `example.com`.
+
+`MAILU_HOSTNAME` refers to the hostname of the mail server. This is where you connect to send and receive mail, and perform server administration. It's not unusual to have a subdomain of the mail domain, e.g. `mailu.example.com` or `mailserver.example.com`.
+
 ## Deployment
 
 ```shell
@@ -166,7 +172,7 @@ opslib - deploy
 Create an initial admin user. Replace `{PASSWORD}` with an initial password. Yes, there are two `admin`s in that command: the mailu _admin_ subcommand which creates a user, and the _admin_ username of the new user.
 
 ```shell
-opslib mailu run admin admin mailu.opslib.grep.ro {PASSWORD}
+opslib mailu run admin admin $MAILU_DOMAIN {PASSWORD}
 ```
 
 Then go to the web admin at `https://{MAILU_HOSTNAME}/admin`, log in, and change the password from the _Update password_ link in the menu on the left.

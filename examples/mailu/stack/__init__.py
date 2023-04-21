@@ -24,7 +24,7 @@ class MailuExample(Stack):
         )
 
         self.a_record = self.zone.record(
-            fqdn=main_domain,
+            fqdn=hostname,
             type="A",
             body=dict(
                 value=self.vps.server.output["ipv4_address"],
