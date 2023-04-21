@@ -1,3 +1,5 @@
+import socket
+import time
 from contextlib import contextmanager
 from pathlib import Path
 from textwrap import dedent
@@ -72,7 +74,24 @@ def container(image):
         yield
 
     finally:
-        podman("rm", "-f", CONTAINER)
+        podman("kill", CONTAINER, check=False)
+        podman("rm", "-f", CONTAINER, check=False)
+
+
+def wait_for_port(port, timeout=10, poll_interval=0.1):
+    expires = time.monotonic() + timeout
+    while time.monotonic() < expires:
+        print("trying ...", timeout, time.monotonic())
+        try:
+            socket.create_connection(("localhost", port))
+            return
+
+        except OSError:
+            pass
+
+        time.sleep(poll_interval)
+
+    raise RuntimeError(f"Timeout expired waiting for SSH on port {port}")
 
 
 @pytest.fixture
@@ -101,6 +120,8 @@ def ssh_container(container_image, tmp_path):
 
         identity.chmod(0o600)
         known_hosts.chmod(0o600)
+
+        wait_for_port(SSH_PORT)
 
         yield SshHost("opslib-tests", config_file=config_file)
 
