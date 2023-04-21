@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyopslib"
-version = "0.0.2"
+version = "0.0.3"
 description = "A Pythonic toolkit to manage infrastructure."
 authors = ["Alex Morega <alex@grep.ro>"]
 license = "MIT"
