@@ -1,8 +1,7 @@
-from pathlib import Path
-
 import click
 
 from opslib.components import Component
+from opslib.lazy import evaluate, lazy_property
 from opslib.places import SshHost
 from opslib.props import Prop
 from opslib.terraform import TerraformProvider
@@ -16,16 +15,20 @@ class VPS(Component):
         self.provider = TerraformProvider(
             name="hcloud",
             source="hetznercloud/hcloud",
-            version="~> 1.36.2",
+            version="~> 1.38.2",
         )
 
-        self.ssh_key = self.provider.resource(
-            type="hcloud_ssh_key",
+        self.ssh_keys = self.provider.data(
+            type="hcloud_ssh_keys",
+            output=["ssh_keys"],
+        )
+
+        self.images = self.provider.data(
+            type="hcloud_images",
             body=dict(
-                name="opslib-example-mailu",
-                public_key=Path("~/.ssh/id_rsa.pub").expanduser().read_text(),
+                with_architecture=["x86"],
             ),
-            output=["id"],
+            output=["images"],
         )
 
         self.server = self.provider.resource(
@@ -33,9 +36,9 @@ class VPS(Component):
             body=dict(
                 name=self.props.hostname,
                 server_type="cx11",
-                image="debian-11",
+                image=self.image_id,
                 location="hel1",
-                ssh_keys=[self.ssh_key.output["id"]],
+                ssh_keys=self.ssh_key_names,
             ),
             output=["id", "ipv4_address"],
         )
@@ -56,6 +59,16 @@ class VPS(Component):
                 creates="/usr/bin/docker",
             ),
         )
+
+    @lazy_property
+    def ssh_key_names(self):
+        return [key["name"] for key in evaluate(self.ssh_keys.output["ssh_keys"])]
+
+    @lazy_property
+    def image_id(self):
+        images = evaluate(self.images.output["images"])
+        [image] = [i for i in images if i["name"] == "debian-11"]
+        return image["id"]
 
     @property
     def host(self):

@@ -109,7 +109,7 @@ class _TerraformComponent(Component):
     class Props:
         provider = Prop(Optional[TerraformProvider])
         type = Prop(str)
-        body = Prop(dict, lazy=True)
+        body = Prop(dict, default={}, lazy=True)
         output = Prop(Optional[list])
 
     @cached_property
