@@ -169,12 +169,14 @@ opslib - init
 opslib - deploy
 ```
 
-Create an initial admin user. Replace `{PASSWORD}` with an initial password. Yes, there are two `admin`s in that command: the mailu _admin_ subcommand which creates a user, and the _admin_ username of the new user.
+At some point, the _deploy_ command will try to call the Mailu API (which takes a while to spin up, it has to fetch Letsencrypt certificates first) and fail with the message `<MailuDomain mailu.domain>: Mailu API not available`. Re-run the command until it succeeds.
+
+Then, create an initial admin user[^2]. Replace `{PASSWORD}` with an initial password.
+
+[^2]: Yes, there are two `admin`s in that command: the mailu _admin_ subcommand which creates a user, and the _admin_ username of the new user.
 
 ```shell
 opslib mailu run admin admin $MAILU_DOMAIN {PASSWORD}
 ```
 
 Then go to the web admin at `https://{MAILU_HOSTNAME}/admin`, log in, and change the password from the _Update password_ link in the menu on the left.
-
----
