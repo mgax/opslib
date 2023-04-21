@@ -12,6 +12,7 @@ class VPS(Component):
         hostname = Prop(str)
 
     def build(self):
+        # https://registry.terraform.io/providers/hetznercloud/hcloud/latest/docs
         self.provider = TerraformProvider(
             name="hcloud",
             source="hetznercloud/hcloud",
@@ -52,6 +53,7 @@ class VPS(Component):
             ),
         )
 
+        # https://docs.ansible.com/ansible/latest/collections/ansible/builtin/shell_module.html
         self.install_docker = self.host.ansible_action(
             module="ansible.builtin.shell",
             args=dict(

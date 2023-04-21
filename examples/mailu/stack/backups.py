@@ -31,6 +31,7 @@ class Backups(Component):
     def build(self):
         self.directory = self.props.directory
 
+        # https://registry.terraform.io/providers/Backblaze/b2/latest/docs
         self.provider = TerraformProvider(
             name="b2",
             source="Backblaze/b2",

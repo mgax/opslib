@@ -38,6 +38,7 @@ class CloudflareZone(Component):
         zone_name = Prop(str)
 
     def build(self):
+        # https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs
         self.provider = TerraformProvider(
             name="cloudflare",
             source="cloudflare/cloudflare",
@@ -185,6 +186,12 @@ class MailDnsRecords(Component):
         @cli.command()
         @click.argument("server", default="")
         def check(server):
+            """
+            Compare expected DNS records with the ones returned by ``dig``.
+            Optionally provide a DNS server to query directly to avoid waiting
+            for DNS propagation.
+            """
+
             def dig(name_format, type):
                 cmd = ["dig", "+noall", "+answer"]
                 if server:
