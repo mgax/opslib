@@ -2,13 +2,14 @@ import json
 
 import click
 import yaml
+from requests.exceptions import ConnectionError
 
 from opslib.components import Component
 from opslib.extras.http import HttpClient
-from opslib.lazy import evaluate, lazy_property
+from opslib.lazy import NotAvailable, evaluate, lazy_property
 from opslib.places import Directory
 from opslib.props import Prop
-from opslib.results import Result
+from opslib.results import OperationError, Result
 from opslib.state import JsonState
 
 from .tokens import RandomToken
@@ -49,7 +50,7 @@ class Mailu(Component):
             ],
         )
 
-        self.dkim = DomainKeys(
+        self.domain = MailuDomain(
             mailu=self,
         )
 
@@ -269,25 +270,54 @@ class Mailu(Component):
             print(json.dumps(self.api.get(path).json, indent=2))
 
 
-class DomainKeys(Component):
+class MailuDomain(Component):
     class Props:
         mailu = Prop(Mailu)
 
     state = JsonState()
 
+    @property
+    def api(self):
+        return self.props.mailu.api
+
+    @property
+    def domain(self):
+        return self.props.mailu.props.main_domain
+
     def refresh(self):
-        mailu = self.props.mailu
-        data = mailu.api.get(f"/domain/{mailu.props.main_domain}").json
-        self.state["generated"] = data["dns_dkim"] is not None
-        return Result(not self.state["generated"])
+        try:
+            domains = {d["name"]: d for d in self.api.get("/domain").json}
+
+        except (ConnectionError, OperationError):
+            raise NotAvailable(f"{self!r}: Mailu API not available")
+
+        state = dict(
+            domain=False,
+            dkim=False,
+        )
+
+        domain = domains.get(self.domain)
+        if domain:
+            state["domain"] = True
+            state["dkim"] = domain["dns_dkim"] is not None
+
+        self.state.update(state)
+        return Result(not self.state["dkim"])
 
     def deploy(self, dry_run=False):
-        if self.state.get("generated"):
+        if not dry_run:
+            self.refresh()
+
+        if self.state.get("domain") and self.state.get("dkim"):
             return Result()
 
         if not dry_run:
-            mailu = self.props.mailu
-            mailu.api.post(f"/domain/{mailu.props.main_domain}/dkim")
+            if not self.state["domain"]:
+                self.api.post("/domain", json=dict(name=self.domain))
+
+            if not self.state["dkim"]:
+                self.api.post(f"/domain/{self.domain}/dkim")
+
             self.refresh()
 
         return Result(changed=True)
