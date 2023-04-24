@@ -226,10 +226,19 @@ class TerraformResource(_TerraformComponent):
         self.run("refresh")
         return TerraformResult(self.run("plan"))
 
+    def _apply(self, dry_run=False, destroy=False):
+        args = ["plan"] if dry_run else ["apply", "-auto-approve"]
+        if destroy:
+            args.append("-destroy")
+        return TerraformResult(self.run(*args, "-refresh=false"))
+
     @uptodate.deploy
     def deploy(self, dry_run=False):
-        args = ["plan"] if dry_run else ["apply", "-auto-approve"]
-        return TerraformResult(self.run(*args, "-refresh=false"))
+        return self._apply(dry_run=dry_run)
+
+    @uptodate.destroy
+    def destroy(self, dry_run=False):
+        return self._apply(dry_run=dry_run, destroy=True)
 
     def import_resource(self, resource_id):
         """

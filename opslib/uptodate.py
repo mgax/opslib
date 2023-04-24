@@ -60,3 +60,12 @@ class UpToDate:
             return result
 
         return decorator
+
+    def destroy(self, func):
+        @wraps(func)
+        def decorator(obj, dry_run=False):
+            result = func(obj, dry_run=dry_run)
+            obj.uptodate.set(False)
+            return result
+
+        return decorator

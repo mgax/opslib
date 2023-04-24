@@ -49,6 +49,16 @@ def test_deploy(local_stack):
 
 
 @pytest.mark.slow
+def test_destroy(local_stack):
+    stack = local_stack()
+    results = apply(stack, deploy=True)
+    assert stack.path.read_text() == "world"
+    results = apply(stack, destroy=True)
+    assert not stack.path.exists()
+    assert results[stack.file].changed
+
+
+@pytest.mark.slow
 def test_diff(local_stack, capsys):
     stack = local_stack()
     results = apply(stack, deploy=True, dry_run=True)
