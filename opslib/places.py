@@ -147,12 +147,14 @@ class SshHost(BaseHost):
         private_key_file=None,
         config_file=None,
         interpreter="python3",
+        control_socket=None,
     ):
         self.hostname = hostname
         self.port = port
         self.username = username
         self.private_key_file = private_key_file
         self.config_file = config_file
+        self.control_socket = control_socket
         self.ansible_variables = [
             ("ansible_python_interpreter", interpreter),
         ]
@@ -171,6 +173,11 @@ class SshHost(BaseHost):
         if config_file:
             self.ansible_variables.append(
                 ("ansible_ssh_common_args", f"-F {config_file}"),
+            )
+
+        if control_socket:
+            self.ansible_variables.append(
+                ("ansible_ssh_args", f"-o ControlPath={control_socket}"),
             )
 
     def run(self, *args, **kwargs):
@@ -194,6 +201,9 @@ class SshHost(BaseHost):
 
         if self.config_file:
             ssh_args += ["-F", str(self.config_file)]
+
+        if self.control_socket:
+            ssh_args += ["-o", f"ControlPath={self.control_socket}"]
 
         ssh_args.append("--")
 
