@@ -167,7 +167,7 @@ def test_command_cli_run(tmp_path, local_host, Stack):
     assert path.is_file()
 
 
-def test_file_diff(tmp_path, local_host, capsys, Stack):
+def test_file_content_diff(tmp_path, local_host, capsys, Stack):
     foo_path = tmp_path / "foo.txt"
     with foo_path.open("w") as f:
         f.write("hello\nworld\n")
@@ -199,3 +199,35 @@ def test_file_diff(tmp_path, local_host, capsys, Stack):
 
     with foo_path.open() as f:
         assert f.read() == "hello\nworld\n", "Target file must not change"
+
+
+def test_file_mode_diff(tmp_path, local_host, capsys, Stack):
+    foo_path = tmp_path / "foo.txt"
+    foo_path.touch(mode=0o644)
+
+    stack = Stack()
+    stack.foo = local_host.file(
+        path=foo_path,
+        content="",
+        mode="755",
+    )
+
+    init_statedir(stack)
+    apply(stack, deploy=True, dry_run=True)
+
+    captured = capsys.readouterr()
+    assert captured.out == dedent(
+        f"""\
+        foo.action AnsibleAction ...
+        foo.action AnsibleAction [changed]
+        --- {foo_path}
+        +++ {foo_path}
+        @@ -1 +1 @@
+        -{{'path': {str(foo_path)!r}, 'mode': '0644'}}
+        +{{'path': {str(foo_path)!r}, 'mode': '0755'}}
+
+        """
+    )
+    assert captured.err == ""
+
+    assert (foo_path.stat().st_mode & 0xFFF) == 0o644

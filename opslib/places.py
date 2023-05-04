@@ -256,12 +256,19 @@ class File(Component):
         )
 
     def format_output(self, result):
-        if result.changed:
-            return "".join(
-                diff(self.path, d["before"], d["after"]) for d in result.data["diff"]
-            )
+        diffs = []
 
-        return ""
+        if result.changed:
+            data_diff = result.data["diff"]
+            if isinstance(data_diff, dict):
+                before = f'{data_diff["before"]}\n'
+                after = f'{data_diff["after"]}\n'
+                diffs.append(diff(self.path, before, after))
+
+            else:
+                diffs += [diff(self.path, d["before"], d["after"]) for d in data_diff]
+
+        return "".join(diffs)
 
     @property
     def on_change(self):
