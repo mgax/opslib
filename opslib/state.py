@@ -1,7 +1,6 @@
 import json
 import logging
 import sys
-from functools import cached_property
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -34,7 +33,7 @@ class ComponentStateDirectory:
 
         return changed
 
-    @cached_property
+    @property
     def path(self):
         assert (
             self._path.is_dir()
@@ -56,11 +55,11 @@ class ComponentJsonState:
     def __init__(self, component):
         self.component = component
 
-    @cached_property
+    @property
     def _path(self):
         return self.component._meta.statedir.path / "state.json"
 
-    @cached_property
+    @property
     def _data(self):
         try:
             with self._path.open() as f:
