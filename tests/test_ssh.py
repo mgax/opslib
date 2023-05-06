@@ -2,7 +2,6 @@ from pathlib import Path
 
 import pytest
 
-from opslib.components import init_statedir
 from opslib.operations import apply
 
 
@@ -22,7 +21,6 @@ def test_ansible_ssh(ssh_container, Stack):
         content="hello world",
     )
 
-    init_statedir(stack)
     apply(stack, deploy=True)
 
     assert ssh_container.run("cat /tmp/foo.txt").stdout == "hello world"
@@ -52,7 +50,6 @@ def test_ansible_sudo(ssh_container, Stack):
         content="hello world",
     )
 
-    init_statedir(stack)
     apply(stack, deploy=True)
 
     assert ssh_container.run("stat -c %U /tmp/foo.txt").stdout == "root\n"

@@ -1,6 +1,5 @@
 import pytest
 
-from opslib.components import init_statedir
 from opslib.extras.systemd import SystemdUnit
 from opslib.operations import apply
 
@@ -23,7 +22,6 @@ def test_unit_enable(ssh_container, Stack):
     )
     stack.enable_unit = stack.unit.enable_command(now=True)
 
-    init_statedir(stack)
     apply(stack, deploy=True)
 
     dpkg_log = ssh_container.run("curl", "localhost:8000/dpkg.log").stdout

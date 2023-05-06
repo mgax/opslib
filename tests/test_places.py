@@ -5,7 +5,6 @@ import pytest
 from click.testing import CliRunner
 
 from opslib.cli import get_cli
-from opslib.components import init_statedir
 from opslib.lazy import Lazy
 from opslib.operations import apply
 from opslib.places import LocalHost
@@ -24,7 +23,6 @@ def test_file_from_path(tmp_path, local_host, Stack):
         content="hello foo",
     )
 
-    init_statedir(stack)
     apply(stack, deploy=True)
 
     with path.open() as f:
@@ -46,7 +44,6 @@ def test_file_lazy_content(tmp_path, local_host, Stack):
         content=Lazy(get_content),
     )
 
-    init_statedir(stack)
     assert not called
     apply(stack, deploy=True)
     assert called
@@ -62,7 +59,6 @@ def test_directory_from_path(tmp_path, local_host, Stack):
         path=path,
     )
 
-    init_statedir(stack)
     apply(stack, deploy=True)
 
     assert path.is_dir()
@@ -73,7 +69,6 @@ def test_directory_from_string_path(tmp_path, local_host, Stack):
     stack = Stack()
     stack.foo = local_host.directory(str(path))
 
-    init_statedir(stack)
     apply(stack, deploy=True)
 
     assert path.is_dir()
@@ -87,7 +82,6 @@ def test_subdir(tmp_path, local_host, Stack):
     )
     stack.bar = stack.foo.subdir("bar")
 
-    init_statedir(stack)
     apply(stack, deploy=True)
 
     assert (path / "bar").is_dir()
@@ -101,7 +95,6 @@ def test_truediv(tmp_path, local_host, Stack):
     )
     stack.bar = stack.foo / "bar"
 
-    init_statedir(stack)
     apply(stack, deploy=True)
 
     assert (path / "bar").is_dir()
@@ -118,7 +111,6 @@ def test_file_from_directory(tmp_path, local_host, Stack):
         content="hello bar",
     )
 
-    init_statedir(stack)
     apply(stack, deploy=True)
 
     with (path / "bar").open() as f:
@@ -132,7 +124,6 @@ def test_command(tmp_path, local_host, Stack):
         args=["touch", str(path)],
     )
 
-    init_statedir(stack)
     apply(stack, deploy=True)
 
     assert path.is_file()
@@ -149,7 +140,6 @@ def test_command_with_input(tmp_path, local_host, Stack):
         ),
     )
 
-    init_statedir(stack)
     apply(stack, deploy=True)
 
     assert (tmp_path / "foo").is_file()
@@ -178,7 +168,6 @@ def test_file_content_diff(tmp_path, local_host, capsys, Stack):
         content="hello\nthere\n",
     )
 
-    init_statedir(stack)
     apply(stack, deploy=True, dry_run=True)
 
     captured = capsys.readouterr()
@@ -212,7 +201,6 @@ def test_file_mode_diff(tmp_path, local_host, capsys, Stack):
         mode="755",
     )
 
-    init_statedir(stack)
     apply(stack, deploy=True, dry_run=True)
 
     captured = capsys.readouterr()

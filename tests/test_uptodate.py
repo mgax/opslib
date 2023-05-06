@@ -2,7 +2,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from opslib.components import Component, init_statedir
+from opslib.components import Component
 from opslib.operations import apply
 from opslib.props import Prop
 from opslib.results import Result
@@ -53,7 +53,6 @@ def Bench(Stack, tmp_path, mock_deploy):
                 content=self.props.content,
             )
 
-    init_statedir(Bench(content=""))
     return Bench
 
 

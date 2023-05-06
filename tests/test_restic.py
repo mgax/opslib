@@ -2,7 +2,6 @@ import json
 
 import pytest
 
-from opslib.components import init_statedir
 from opslib.extras.restic import ResticRepository
 from opslib.local import run
 from opslib.operations import apply
@@ -18,7 +17,6 @@ def test_initialize(tmp_path, Stack):
         repository=str(repo_path),
         password="not-so-secret",
     )
-    init_statedir(stack)
     assert not stack.repo.initialized
 
     apply(stack, deploy=True)
@@ -50,7 +48,6 @@ def test_backup_script(tmp_path, Stack):
         directory=LocalHost().directory(backup_script_path.parent),
         name=backup_script_path.name,
     )
-    init_statedir(stack)
     assert not stack.repo.initialized
 
     apply(stack, deploy=True)

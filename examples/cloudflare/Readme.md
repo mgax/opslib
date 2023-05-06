@@ -34,7 +34,6 @@ CLOUDFLARE_ALLOW_EMAILS=foo@example.com,bar@example.com
 ## Deployment
 
 ```shell
-opslib - init
 opslib - deploy
 ```
 

@@ -120,12 +120,3 @@ def walk(component):
     yield component
     for child in component:
         yield from walk(child)
-
-
-def init_statedir(stack):
-    from .operations import Printer
-
-    for component in walk(stack):
-        changed = component._meta.statedir.init()
-        if changed:
-            Printer(component).print_component(changed=True)

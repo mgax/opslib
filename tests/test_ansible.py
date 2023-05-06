@@ -3,7 +3,6 @@ import sys
 import pytest
 
 from opslib.ansible import AnsibleAction, run_ansible
-from opslib.components import init_statedir
 from opslib.operations import apply
 from opslib.places import LocalHost
 from opslib.results import OperationError
@@ -65,7 +64,6 @@ def test_ansible_action(tmp_path, Stack):
             state="directory",
         ),
     )
-    init_statedir(stack)
     apply(stack, deploy=True)
     assert foo_path.is_dir()
 
@@ -78,6 +76,5 @@ def test_check_not_supported(Stack, op):
         args=dict(cmd="echo hello world"),
     )
 
-    init_statedir(stack)
     results = apply(stack, **op)
     assert results[stack.action].changed

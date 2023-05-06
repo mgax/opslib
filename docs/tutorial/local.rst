@@ -112,13 +112,7 @@ which ensures the directories will be created.
 Deploying the Stack
 -------------------
 
-First, we must run the ``init`` command, to initialize the opslib state.
-
-.. code-block:: none
-
-    $ opslib - init
-
-It will create a subdirectory named ``.opslib`` in our project where it will
+Opslib will create a subdirectory named ``.opslib`` in our project where it will
 keep track, among other things, of which components got deployed successfully.
 It's useful to assume that files don't change by themselves after we write
 them, so that we skip them, and the deployment process is quicker.

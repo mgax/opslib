@@ -1,6 +1,6 @@
 import pytest
 
-from opslib.components import Component, init_statedir
+from opslib.components import Component
 from opslib.state import JsonState
 
 
@@ -13,7 +13,6 @@ def Bench(Stack):
         def build(self):
             self.box = Box()
 
-    init_statedir(Bench())
     return Bench
 
 

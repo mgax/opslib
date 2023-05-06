@@ -19,25 +19,21 @@ class ComponentStateDirectory:
         self._path = self._prefix / "_statedir"
 
     def init(self):
-        changed = False
+        if self.meta.parent:
+            self.meta.parent._meta.statedir.init()
 
         if not self._prefix.exists():
             logger.debug("ComponentState init %s", self._prefix)
             self._prefix.mkdir(mode=0o700)
-            changed = True
 
         if not self._path.exists():
             logger.debug("ComponentState init %s", self._path)
             self._path.mkdir(mode=0o700)
-            changed = True
-
-        return changed
 
     @property
     def path(self):
-        assert (
-            self._path.is_dir()
-        ), f"State directory for {self.meta.component!r} missing, please run `init`."
+        if not self._path.is_dir():
+            self.init()
         return self._path
 
 

@@ -15,7 +15,6 @@ export RESTIC_PASSWORD=[...]
 Deploying the stack will set up the Restic repository and create a backup script:
 
 ```shell
-opslib - init
 opslib - deploy
 ```
 

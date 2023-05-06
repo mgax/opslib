@@ -17,7 +17,6 @@ We're going to deploy [Mailu](https://mailu.io), on a [Hetzner](https://www.hetz
 1. [Configure](#configuration) environment variables.
 1. Deploy the stack.
     ```shell
-    opslib - init
     opslib - deploy
     ```
 1. Create an initial admin user.
@@ -165,7 +164,6 @@ Make sure the Cloudflare token has "Zone - DNS - Edit" permission.
 ## Deployment
 
 ```shell
-opslib - init
 opslib - deploy
 ```
 

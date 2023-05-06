@@ -5,7 +5,6 @@ import pytest
 from click.testing import CliRunner
 
 from opslib.cli import get_main_cli
-from opslib.components import init_statedir
 from opslib.lazy import NotAvailable, evaluate
 from opslib.operations import apply
 from opslib.terraform import TerraformProvider, TerraformResource
@@ -31,7 +30,6 @@ def local_stack(Stack, tmp_path):
                 self.file = self.provider.resource(**file_props)
 
         stack = LocalStack()
-        init_statedir(stack)
         return stack
 
     return create_local_stack
@@ -133,7 +131,6 @@ def test_output_not_available(Stack):
         ),
         output=["service_id"],
     )
-    init_statedir(stack)
     apply(stack, refresh=True)
     with pytest.raises(NotAvailable) as error:
         print(evaluate(stack.order.output["service_id"]))
@@ -151,7 +148,6 @@ def test_import_resource(Stack):
         body={},
         output=["id"],
     )
-    init_statedir(stack)
     value = "2020-02-12T06:36:13Z"
     stack.time.import_resource(value)
     assert evaluate(stack.time.output["id"]) == value
@@ -174,7 +170,6 @@ def test_provider_config(Stack, tmp_path):
             number=13,
         ),
     )
-    init_statedir(stack)
     apply(stack, deploy=True)
     # XXX for some reason, Terraform quotes our directory name
     [outfile] = (stack.resource.tf_path / '"opslib_resource_directory"').iterdir()
@@ -198,7 +193,6 @@ def test_data_source(Stack, tmp_path):
         ),
         output=["content"],
     )
-    init_statedir(stack)
     with pytest.raises(NotAvailable) as error:
         evaluate(stack.source.output["content"])
     assert error.value.args == (

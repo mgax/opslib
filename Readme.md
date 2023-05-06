@@ -75,7 +75,6 @@ def get_stack():
 To deploy the stack, simply run:
 
 ```shell
-opslib - init
 opslib - deploy
 ```
 

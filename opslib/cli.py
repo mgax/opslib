@@ -7,7 +7,6 @@ import sys
 
 import click
 
-from .components import init_statedir
 from .operations import apply, print_report
 
 logger = logging.getLogger(__name__)
@@ -49,10 +48,6 @@ def get_cli(component):
     @click.group()
     def cli():
         pass
-
-    @cli.command("init")
-    def init():
-        init_statedir(component)
 
     @cli.command()
     def id():

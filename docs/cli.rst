@@ -44,23 +44,6 @@ stack itself:
 Most of the examples below will target the whole stack, but any command can be
 run on any component in the stack, so you can for example do a partial deploy.
 
-Initialization
---------------
-
-Because Opslib keeps state, the first command that needs to be run is ``init``.
-This will create state directories for each component inside the ``.opslib``
-directory.
-
-.. code-block:: none
-
-    opslib - init
-
-.. note::
-
-    The purpose of the ``init`` command is to avoid creating state by mistake.
-    If a component name changes because of a typo, we don't want to create a
-    new state directory, but rather receive an error.
-
 Checking differences
 --------------------
 

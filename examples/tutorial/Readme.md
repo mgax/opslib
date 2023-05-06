@@ -29,12 +29,6 @@ The Opslib tutorial project fully implemented.
     pip install git+https://github.com/mgax/opslib
     ```
 
-1. Initialize local state:
-
-    ```shell
-    opslib - init
-    ```
-
 1. Check what will be deployed:
 
     ```shell

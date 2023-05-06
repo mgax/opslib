@@ -1,6 +1,5 @@
 import pytest
 
-from opslib.components import init_statedir
 from opslib.operations import apply
 from opslib.places import LocalHost
 from opslib.props import Prop
@@ -20,7 +19,6 @@ def test_none(tmp_path, local_host, Stack):
                 args=["touch", path],
             )
 
-    init_statedir(Bench())
     apply(Bench(), deploy=True)
     assert path.is_file()
     path.unlink()
@@ -46,7 +44,6 @@ def test_file(tmp_path, local_host, Stack):
                 run_after=[self.file],
             )
 
-    init_statedir(Bench(content=""))
     out_path.write_text("initial")
 
     # command not run because `file` not deployed
@@ -87,7 +84,6 @@ def test_command(tmp_path, local_host, Stack):
                 run_after=[self.pre_cmd],
             )
 
-    init_statedir(Bench(content=""))
     out_path.write_text("initial")
 
     # command not run because `pre_cmd` not run
