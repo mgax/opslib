@@ -8,8 +8,8 @@ from opslib.places import LocalHost
 
 class Demo(Stack):
     def build(self):
-        host = LocalHost()
-        self.directory = host.directory(Path(__file__).parent / "demo")
+        self.host = LocalHost()
+        self.directory = self.host.directory(Path(__file__).parent / "demo")
         self.repo = self.directory / "repo"
         self.target = self.directory / "target"
 

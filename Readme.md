@@ -34,19 +34,17 @@ class VPS(Component):
             output=["ipv4_address"],
         )
 
+        self.host = SshHost(
+            hostname=self.server.output["ipv4_address"],
+            username="root",
+        )
+
         self.install_docker = self.host.ansible_action(
             module="ansible.builtin.shell",
             args=dict(
                 cmd="curl -s https://get.docker.com | bash",
                 creates="/opt/bin/docker",
             ),
-        )
-
-    @property
-    def host(self):
-        return SshHost(
-            hostname=self.server.output["ipv4_address"],
-            username="root",
         )
 
     def add_commands(self, cli):

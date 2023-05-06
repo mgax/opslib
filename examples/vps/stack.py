@@ -1,5 +1,3 @@
-import click
-
 from opslib.components import Component, Stack
 from opslib.places import SshHost
 from opslib.props import Prop
@@ -24,6 +22,11 @@ class VPS(Component):
             output=["ipv4_address"],
         )
 
+        self.host = SshHost(
+            hostname=self.server.output["ipv4_address"],
+            username="root",
+        )
+
         self.install_docker = self.host.ansible_action(
             module="ansible.builtin.shell",
             args=dict(
@@ -31,19 +34,6 @@ class VPS(Component):
                 creates="/opt/bin/docker",
             ),
         )
-
-    @property
-    def host(self):
-        return SshHost(
-            hostname=self.server.output["ipv4_address"],
-            username="root",
-        )
-
-    def add_commands(self, cli):
-        @cli.command(context_settings=dict(ignore_unknown_options=True))
-        @click.argument("args", nargs=-1, type=click.UNPROCESSED)
-        def ssh(args):
-            self.host.run(*args, capture_output=False, exit=True)
 
 
 class Example(Stack):

@@ -1,8 +1,6 @@
 import os
 from pathlib import Path
 
-import click
-
 from opslib.components import Component, Stack
 from opslib.extras.tailscale import TailscaleNetwork
 from opslib.places import SshHost
@@ -26,6 +24,11 @@ class VPS(Component):
             output=["id"],
         )
 
+        self.host = SshHost(
+            hostname=self.server.output["ipv4_address"],
+            username="root",
+        )
+
         self.server = self.props.hetzner.resource(
             type="hcloud_server",
             body=dict(
@@ -43,19 +46,6 @@ class VPS(Component):
         self.tailscale = self.props.tailnet.node(
             run=self.host.run,
         )
-
-    @property
-    def host(self):
-        return SshHost(
-            hostname=self.server.output["ipv4_address"],
-            username="root",
-        )
-
-    def add_commands(self, cli):
-        @cli.command(context_settings=dict(ignore_unknown_options=True))
-        @click.argument("args", nargs=-1, type=click.UNPROCESSED)
-        def ssh(args):
-            self.host.run(*args, capture_output=False, exit=True)
 
 
 class Example(Stack):

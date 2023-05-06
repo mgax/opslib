@@ -123,7 +123,7 @@ def ssh_container(container_image, tmp_path):
 
         wait_for_port(SSH_PORT)
 
-        yield SshHost("opslib-tests", config_file=config_file)
+        yield SshHost(hostname="opslib-tests", config_file=config_file)
 
 
 def pytest_addoption(parser):

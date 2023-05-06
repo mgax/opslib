@@ -4,6 +4,8 @@ from copy import copy
 from pathlib import Path
 from typing import Optional, Union
 
+import click
+
 from .ansible import AnsibleAction
 from .callbacks import Callbacks
 from .components import Component
@@ -15,9 +17,9 @@ from .state import JsonState
 from .utils import diff
 
 
-class BaseHost:
+class BaseHost(Component):
     """
-    Abstract class for a host.
+    Abstract component for a host.
     """
 
     with_sudo = False
@@ -89,10 +91,16 @@ class BaseHost:
         ]
         return rv
 
+    def add_commands(self, cli):
+        @cli.command(context_settings=dict(ignore_unknown_options=True))
+        @click.argument("args", nargs=-1, type=click.UNPROCESSED)
+        def run(args):
+            self.run(*args, capture_output=False, exit=True)
+
 
 class LocalHost(BaseHost):
     """
-    The local host on which opslib is running. It receives no arguments.
+    The local host on which opslib is running. It receives no props.
 
     :ivar hostname: Set to ``localhost``.
     :ivar ansible_variables: Two variables are set: ``ansible_connection`` is
@@ -122,7 +130,7 @@ class LocalHost(BaseHost):
 
 class SshHost(BaseHost):
     """
-    Connect to a remote host over SSH. Most arguments configure how the ``ssh``
+    Connect to a remote host over SSH. Most props configure how the ``ssh``
     subcommand is invoked. If you have already configured the host in
     ``~/.ssh/config``, it's enough to specify ``hostname``, as you would in the
     terminal.
@@ -139,39 +147,39 @@ class SshHost(BaseHost):
                         ``"python3"``.
     """
 
-    def __init__(
-        self,
-        hostname,
-        username=None,
-        port=None,
-        private_key_file=None,
-        config_file=None,
-        interpreter="python3",
-    ):
-        self.hostname = hostname
-        self.port = port
-        self.username = username
-        self.private_key_file = private_key_file
-        self.config_file = config_file
+    class Props:
+        hostname = Prop(str, lazy=True)
+        username = Prop(Optional[str])
+        port = Prop(Optional[int])
+        private_key_file = Prop(Optional[Path])
+        config_file = Prop(Optional[Path])
+        interpreter = Prop(str, default="python3")
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)  # TODO always attach host to stack
         self.ansible_variables = [
-            ("ansible_python_interpreter", interpreter),
+            ("ansible_python_interpreter", self.props.interpreter),
         ]
 
-        if port:
-            self.ansible_variables.append(("ansible_ssh_port", str(port)))
+        if self.props.port:
+            self.ansible_variables.append(("ansible_ssh_port", str(self.props.port)))
 
-        if username:
-            self.ansible_variables.append(("ansible_user", username))
+        if self.props.username:
+            self.ansible_variables.append(("ansible_user", self.props.username))
 
-        if private_key_file:
+        if self.props.private_key_file:
             self.ansible_variables.append(
-                ("ansible_ssh_private_key_file", str(private_key_file))
+                ("ansible_ssh_private_key_file", str(self.props.private_key_file))
             )
 
-        if config_file:
+        if self.props.config_file:
             self.ansible_variables.append(
-                ("ansible_ssh_common_args", f"-F {config_file}"),
+                ("ansible_ssh_common_args", f"-F {self.props.config_file}"),
             )
+
+    @property
+    def hostname(self):
+        return self.props.hostname
 
     def run(self, *args, **kwargs):
         """
@@ -182,18 +190,18 @@ class SshHost(BaseHost):
         """
 
         hostname = evaluate(self.hostname)
-        if self.username:
-            hostname = f"{self.username}@{hostname}"
+        if self.props.username:
+            hostname = f"{self.props.username}@{hostname}"
 
         ssh_args = ["ssh", hostname]
-        if self.port:
-            ssh_args += ["-p", str(self.port)]
+        if self.props.port:
+            ssh_args += ["-p", str(self.props.port)]
 
-        if self.private_key_file:
-            ssh_args += ["-i", str(self.private_key_file)]
+        if self.props.private_key_file:
+            ssh_args += ["-i", str(self.props.private_key_file)]
 
-        if self.config_file:
-            ssh_args += ["-F", str(self.config_file)]
+        if self.props.config_file:
+            ssh_args += ["-F", str(self.props.config_file)]
 
         ssh_args.append("--")
 

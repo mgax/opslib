@@ -109,8 +109,8 @@ class App(Component):
 
 class Demo(Stack):
     def build(self):
-        host = LocalHost()
-        self.directory = host.directory(Path(__file__).parent / "target")
+        self.host = LocalHost()
+        self.directory = self.host.directory(Path(__file__).parent / "target")
         self.app = App(
             directory=self.directory / "opslib-examples-compose",
             listen="3000",

@@ -1,7 +1,5 @@
 from pathlib import Path
 
-import click
-
 from opslib.components import Component
 from opslib.places import SshHost
 from opslib.props import Prop
@@ -28,6 +26,11 @@ class VPS(Component):
             output=["id"],
         )
 
+        self.host = SshHost(
+            hostname=self.server.output["ipv4_address"],
+            username="root",
+        )
+
         self.server = self.provider.resource(
             type="hcloud_server",
             body=dict(
@@ -49,16 +52,3 @@ class VPS(Component):
                 creates="/opt/bin/docker",
             ),
         )
-
-    @property
-    def host(self):
-        return SshHost(
-            hostname=self.server.output["ipv4_address"],
-            username="root",
-        )
-
-    def add_commands(self, cli):
-        @cli.command(context_settings=dict(ignore_unknown_options=True))
-        @click.argument("args", nargs=-1, type=click.UNPROCESSED)
-        def ssh(args):
-            self.host.run(*args, capture_output=False, exit=True)

@@ -170,8 +170,8 @@ class App(Component):
 
 class Demo(Stack):
     def build(self):
-        host = LocalHost()
-        self.directory = host.directory(Path(__file__).parent / "target")
+        self.host = LocalHost()
+        self.directory = self.host.directory(Path(__file__).parent / "target")
 
         allow_emails_env = os.environ.get("CLOUDFLARE_ALLOW_EMAILS")
 

@@ -15,8 +15,10 @@ class MyCodeForge(Stack):
             self.directory = self.vps.host.directory("/opt/opslib")
 
         else:
-            host = LocalHost()
-            self.directory = host.directory(Path(__file__).parent.parent / "target")
+            self.host = LocalHost()
+            self.directory = self.host.directory(
+                Path(__file__).parent.parent / "target"
+            )
 
         self.gitea = Gitea(
             directory=self.directory / "gitea",

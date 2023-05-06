@@ -1,5 +1,3 @@
-import click
-
 from opslib.components import Component
 from opslib.lazy import evaluate, lazy_property
 from opslib.places import SshHost
@@ -53,6 +51,11 @@ class VPS(Component):
             ),
         )
 
+        self.host = SshHost(
+            hostname=self.server.output["ipv4_address"],
+            username="root",
+        )
+
         # https://docs.ansible.com/ansible/latest/collections/ansible/builtin/shell_module.html
         self.install_docker = self.host.ansible_action(
             module="ansible.builtin.shell",
@@ -71,16 +74,3 @@ class VPS(Component):
         images = evaluate(self.images.output["images"])
         [image] = [i for i in images if i["name"] == "debian-11"]
         return image["id"]
-
-    @property
-    def host(self):
-        return SshHost(
-            hostname=self.server.output["ipv4_address"],
-            username="root",
-        )
-
-    def add_commands(self, cli):
-        @cli.command(context_settings=dict(ignore_unknown_options=True))
-        @click.argument("args", nargs=-1, type=click.UNPROCESSED)
-        def ssh(args):
-            self.host.run(*args, capture_output=False, exit=True)
