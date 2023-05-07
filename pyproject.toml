@@ -30,7 +30,7 @@ sphinx-autobuild = "^2021.3.14"
 opslib = "opslib.cli:main"
 
 [tool.pytest.ini_options]
-addopts = "--black --isort"
+addopts = "--black --isort --ignore examples"
 log_level = "DEBUG"
 markers = [
   "slow: marks tests as slow",
