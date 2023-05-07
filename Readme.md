@@ -1,89 +1,95 @@
 # Opslib
 
-Tired of describing your infrastructure with declarative configuration files that make any non-trivial logic awkward? Opslib is a Pythonic toolkit to manage infrastructure, inspired by [AWS CDK](https://aws.amazon.com/cdk/).
+Opslib is a Python infrastructure-as-code framework which offers powerful abstractions to make deployment straightforward and fun.
 
-Opslib is tiny but it stands on the shoulders of giants. You can use any Terraform Provider, Ansible Module, or directly execute shell commands.
+### Installing
 
-## Example
+```shell
+$ pip install -U pyopslib
+```
 
-The code below creates a VPS using the [Hetzner Cloud](https://registry.terraform.io/providers/hetznercloud/hcloud/latest) Terraform provider and installs Docker using the [Ansible `shell` module](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/shell_module.html). It also defines a custom `ssh` command to log into the server.
+## A Simple Example
 
 ```python
 # stack.py
-import click
-from opslib.components import Component, Stack
-from opslib.places import SshHost
-from opslib.props import Prop
+from opslib import SshHost, Stack
+from opslib.ansible import AnsibleAction
 from opslib.terraform import TerraformProvider
 
-class VPS(Component):
-    class Props:
-        hetzner = Prop(TerraformProvider)
-        name = Prop(str)
+stack = Stack(__name__)
 
-    def build(self):
-        self.server = self.props.hetzner.resource(
-            type="hcloud_server",
-            body=dict(
-                name=self.props.name,
-                server_type="cx11",
-                image="debian-11",
-                location="hel1",
-                ssh_keys=["my-key"],
-            ),
-            output=["ipv4_address"],
-        )
+stack.hetzner = TerraformProvider(
+    name="hcloud",
+    source="hetznercloud/hcloud",
+    version="~> 1.38.2",
+)
 
-        self.host = SshHost(
-            hostname=self.server.output["ipv4_address"],
-            username="root",
-        )
+stack.server = stack.hetzner.resource(
+    type="hcloud_server",
+    body=dict(
+        name="opslib-example",
+        server_type="cx11",
+        image="debian-11",
+        location="hel1",
+        ssh_keys=["my-key"],
+    ),
+    output=["ipv4_address"],
+)
 
-        self.install_docker = self.host.ansible_action(
-            module="ansible.builtin.shell",
-            args=dict(
-                cmd="curl -s https://get.docker.com | bash",
-                creates="/opt/bin/docker",
-            ),
-        )
+stack.vm = SshHost(
+    hostname=stack.server.output["ipv4_address"],
+    username="root",
+)
 
-    def add_commands(self, cli):
-        @cli.command(context_settings=dict(ignore_unknown_options=True))
-        @click.argument("args", nargs=-1, type=click.UNPROCESSED)
-        def ssh(args):
-            self.host.run(*args, capture_output=False, exit=True)
-
-class Example(Stack):
-    def build(self):
-        self.hetzner = TerraformProvider(
-            name="hcloud",
-            source="hetznercloud/hcloud",
-            version="~> 1.36.2",
-        )
-
-        self.vps = VPS(
-            hetzner=self.hetzner,
-            name="mycodeforge",
-        )
-
-def get_stack():
-    return Example()
+stack.install_docker = AnsibleAction(
+    host=stack.vm,
+    module="ansible.builtin.shell",
+    args=dict(
+        cmd="curl -s https://get.docker.com | bash",
+        creates="/opt/bin/docker",
+    ),
+)
 ```
 
-To deploy the stack, simply run:
+Deploy the stack. It's called `-` because it's the top level _Stack_ object:
 
 ```shell
+export HCLOUD_TOKEN="..."  # https://docs.hetzner.com/cloud/api/getting-started/generating-api-token
 opslib - deploy
 ```
 
-Then, check if Docker works, by running the `hello-world` image. `opslib vps ssh` invokes the custom command created in `add_commands`.
+Now we can interact with the VPS host, which we named `vm` above:
 
-```shell
-opslib vps ssh docker run --rm hello-world
+```shel
+opslib vm run 'set -x; whoami; uptime'
+opslib vm run docker run --rm hello-world
 ```
 
-## Documentation
+Finally, we tear down the stack:
 
-https://pyopslib.readthedocs.io
+```shell
+opslib - destroy
+```
 
-A good place to start is [the tutorial](https://pyopslib.readthedocs.io/en/latest/tutorial/index.html).
+## Features
+
+Opslib does its best to enable readable code so you can reason about your stack. This means making use of [descriptors](https://docs.python.org/3/howto/descriptor.html), [typing](https://docs.python.org/3/library/typing.html) and other Python language features where it makes sense.
+
+* Defining components
+    * Define the stack in terms of [nested components](https://pyopslib.readthedocs.io/en/latest/components.html) with typed [props](https://pyopslib.readthedocs.io/en/latest/components.html#props).
+    * [Extensible cli](https://pyopslib.readthedocs.io/en/latest/cli.html): any component in the stack can be referenced directly and may [define its own commands](https://pyopslib.readthedocs.io/en/latest/cli.html#defining-custom-commands).
+* Batteries included
+    * Terraform: invoke any provider from the Terraform Registry.
+    * Ansible: invoke any module from Ansible Collections.
+    * Places: native modeling of local/remote hosts, files, directories and shell commands.
+    * A handful of specific integrations (e.g. systemd, restic). _I plan to spin them off into a library of reusable components._
+* Operations model
+    * Most actions boil down to invoking [subprocess commands](https://pyopslib.readthedocs.io/en/latest/api.html#opslib.local.run) or HTTP requests. All actions return [Results](https://pyopslib.readthedocs.io/en/latest/api.html#opslib.results.Result), which are understood by the reporting layer.
+    * Many components, after being successfully deployed, are skipped on subsequent deployments, unless their props change, or are manually refreshed to account for remote state changes.
+    * [Commands](https://pyopslib.readthedocs.io/en/latest/api.html#opslib.places.Command) may track deployment of other components (e.g. configuration files) and only get re-run when needed.
+    * [Lazy variables](https://pyopslib.readthedocs.io/en/latest/components.html#lazy-values), that wrap values which are available after another component is deployed, get evaluated when they are needed.
+
+## Links
+
+* Documentation: https://pyopslib.readthedocs.io
+* Examples: https://github.com/mgax/opslib/tree/main/examples
