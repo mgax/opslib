@@ -9,10 +9,9 @@ from opslib.places import LocalHost
 
 
 @pytest.mark.slow
-def test_initialize(tmp_path, Stack):
+def test_initialize(tmp_path, stack):
     repo_path = tmp_path / "repo"
 
-    stack = Stack()
     stack.repo = ResticRepository(
         repository=str(repo_path),
         password="not-so-secret",
@@ -25,7 +24,7 @@ def test_initialize(tmp_path, Stack):
 
 
 @pytest.mark.slow
-def test_backup_script(tmp_path, Stack):
+def test_backup_script(tmp_path, stack):
     repo_path = tmp_path / "repo"
     target_path = tmp_path / "target"
     target_path.mkdir()
@@ -34,7 +33,6 @@ def test_backup_script(tmp_path, Stack):
     target_1_path.write_text("hello world")
     backup_script_path = tmp_path / "backup_script"
 
-    stack = Stack()
     stack.repo = ResticRepository(
         repository=str(repo_path),
         password="not-so-secret",

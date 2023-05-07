@@ -1,6 +1,6 @@
 import pytest
 
-from opslib.components import Component, Meta, Stack
+from opslib.components import Component, Meta
 from opslib.props import Prop
 
 
@@ -13,8 +13,8 @@ def test_component_props():
     assert bench.props.name == "thingie"
 
 
-def test_stack_calls_build():
-    class Bench(Stack):
+def test_stack_calls_build(TestingStack):
+    class Bench(TestingStack):
         def build(self):
             self.build_called = True
 
@@ -22,14 +22,14 @@ def test_stack_calls_build():
     assert bench.build_called
 
 
-def test_setattr_attaches_child_and_calls_build():
+def test_setattr_attaches_child_and_calls_build(TestingStack):
     class Child(Component):
         build_called = False
 
         def build(self):
             self.build_called = True
 
-    class Bench(Stack):
+    class Bench(TestingStack):
         def build(self):
             self.child = Child()
 
@@ -38,14 +38,14 @@ def test_setattr_attaches_child_and_calls_build():
     assert bench._children["child"] is bench.child
 
 
-def test_setattr_skips_underscore_names():
+def test_setattr_skips_underscore_names(TestingStack):
     class Child(Component):
         build_called = False
 
         def build(self):
             self.build_called = True
 
-    class Bench(Stack):
+    class Bench(TestingStack):
         def build(self):
             self._child = Child()
 
@@ -53,61 +53,57 @@ def test_setattr_skips_underscore_names():
     assert not bench._child.build_called
 
 
-def test_setattr_warns_against_overriding_the_api():
-    stack = Stack()
+def test_setattr_warns_against_overriding_the_api(stack):
     with pytest.raises(AttributeError) as error:
         stack.build = Component()
 
-    assert error.value.args == ("<Stack __root__> already has attribute 'build'",)
+    assert error.value.args == (
+        "<TestingStack __root__> already has attribute 'build'",
+    )
 
 
-def test_meta_fields():
-    stack = Stack()
+def test_meta_fields(stack):
     stack.child = Component()
     assert stack.child._meta.component is stack.child
     assert stack.child._meta.name == "child"
     assert stack.child._meta.parent is stack
 
 
-def test_str():
-    stack = Stack()
+def test_str(stack):
     stack.a = Component()
     stack.a.b = Component()
     assert str(stack.a.b) == "a.b"
 
 
-def test_repr():
-    stack = Stack()
+def test_repr(stack):
     stack.a = Component()
     stack.a.b = Component()
     assert repr(stack.a.b) == "<Component a.b>"
 
 
-def test_double_attach_fails():
-    stack = Stack()
+def test_double_attach_fails(stack):
     stack.child = Component()
 
     with pytest.raises(ValueError) as error:
         stack.alias = stack.child
 
     assert error.value.args == (
-        "Cannot attach <Component child> to <Stack __root__> "
+        "Cannot attach <Component child> to <TestingStack __root__> "
         "because it's already attached",
     )
 
 
-def test_iter():
-    stack = Stack()
+def test_iter(stack):
     stack.a = Component()
     stack.b = Component()
     assert list(stack) == [stack.a, stack.b]
 
 
-def test_custom_meta_class():
+def test_custom_meta_class(TestingStack):
     class CustomMeta(Meta):
         pass
 
-    class CustomStack(Stack):
+    class CustomStack(TestingStack):
         Meta = CustomMeta
 
     class CustomComponent(Component):

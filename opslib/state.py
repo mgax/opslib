@@ -1,7 +1,5 @@
 import json
 import logging
-import sys
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -10,41 +8,33 @@ class ComponentStateDirectory:
     def __init__(self, meta):
         self.meta = meta
 
-        if meta.parent is None:
-            self._prefix = meta.component.get_state_directory()
+    @property
+    def prefix(self):
+        if self.meta.parent is None:
+            prefix = self.meta.stateroot
 
         else:
-            self._prefix = meta.parent._meta.statedir._prefix / meta.name
+            parent_meta = self.meta.parent._meta
+            prefix = parent_meta.statedir.prefix / self.meta.name
 
-        self._path = self._prefix / "_statedir"
-
-    def init(self):
-        if self.meta.parent:
-            self.meta.parent._meta.statedir.init()
-
-        if not self._prefix.exists():
-            logger.debug("ComponentState init %s", self._prefix)
-            self._prefix.mkdir(mode=0o700)
-
-        if not self._path.exists():
-            logger.debug("ComponentState init %s", self._path)
-            self._path.mkdir(mode=0o700)
+        self._mkdir(prefix)
+        return prefix
 
     @property
     def path(self):
-        if not self._path.is_dir():
-            self.init()
-        return self._path
+        path = self.prefix / "_statedir"
+        self._mkdir(path)
+        return path
+
+    def _mkdir(self, path):
+        if not path.is_dir():
+            logger.debug("ComponentState init %s", path)
+            path.mkdir(mode=0o700)
 
 
 class StateDirectory:
     def __get__(self, obj, objtype=None):
         return ComponentStateDirectory(obj)
-
-
-def default_state_directory(stack):
-    module = sys.modules[stack.__module__]
-    return Path(module.__file__).parent / ".opslib"
 
 
 class ComponentJsonState:

@@ -11,13 +11,13 @@ from opslib.terraform import TerraformProvider, TerraformResource
 
 
 @pytest.fixture
-def local_stack(Stack, tmp_path):
+def local_stack(TestingStack, tmp_path):
     def create_local_stack(**file_props):
         path = tmp_path / "hello.txt"
         file_props.setdefault("type", "local_file")
         file_props.setdefault("body", dict(content="world", filename=str(path)))
 
-        class LocalStack(Stack):
+        class LocalStack(TestingStack):
             def build(self):
                 self.provider = TerraformProvider(
                     name="local",
@@ -118,8 +118,7 @@ def test_output(local_stack):
 
 
 @pytest.mark.slow
-def test_output_not_available(Stack):
-    stack = Stack()
+def test_output_not_available(stack):
     stack.provider = TerraformProvider(
         name="consul",
     )
@@ -141,8 +140,7 @@ def test_output_not_available(Stack):
 
 
 @pytest.mark.slow
-def test_import_resource(Stack):
-    stack = Stack()
+def test_import_resource(stack):
     stack.time = TerraformResource(
         type="time_static",
         body={},
@@ -154,8 +152,7 @@ def test_import_resource(Stack):
 
 
 @pytest.mark.slow
-def test_provider_config(Stack, tmp_path):
-    stack = Stack()
+def test_provider_config(stack, tmp_path):
     stack.provider = TerraformProvider(
         name="tfcoremock",
         source="tfcoremock",
@@ -177,10 +174,9 @@ def test_provider_config(Stack, tmp_path):
 
 
 @pytest.mark.slow
-def test_data_source(Stack, tmp_path):
+def test_data_source(stack, tmp_path):
     path = tmp_path / "hello.txt"
     path.write_text("world")
-    stack = Stack()
     stack.provider = TerraformProvider(
         name="local",
         source="hashicorp/local",

@@ -157,17 +157,21 @@ def get_main_cli(get_stack):
     return cli
 
 
+def get_stack():
+    sys.path.append(os.getcwd())
+    module = importlib.import_module(os.environ.get("OPSLIB_STACK", "stack"))
+    return module.stack
+
+
 def main():
     """
     Main entry point for the ``opslib`` CLI command. It tries to run ``import
-    stack`` and expects to find a callable named ``stack.get_stack``, which it
-    sends to :func:`get_main_cli`.
+    stack`` and expects to find a stack named ``stack.stack``, which it sends
+    to :func:`get_main_cli`.
 
     The ``OPSLIB_STACK`` environment variable can be set to import something
     other than ``stack``.
     """
 
-    sys.path.append(os.getcwd())
-    module = importlib.import_module(os.environ.get("OPSLIB_STACK", "stack"))
-    cli = get_main_cli(module.get_stack)
+    cli = get_main_cli(get_stack)
     cli()

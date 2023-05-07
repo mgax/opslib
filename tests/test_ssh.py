@@ -14,8 +14,7 @@ def test_ssh_run(ssh_container):
 
 
 @pytest.mark.slow
-def test_ansible_ssh(ssh_container, Stack):
-    stack = Stack()
+def test_ansible_ssh(ssh_container, stack):
     stack.foo = ssh_container.file(
         path=Path("/tmp/foo.txt"),
         content="hello world",
@@ -43,8 +42,7 @@ def test_run_sudo_with_input(ssh_container):
 
 
 @pytest.mark.slow
-def test_ansible_sudo(ssh_container, Stack):
-    stack = Stack()
+def test_ansible_sudo(ssh_container, stack):
     stack.foo = ssh_container.sudo().file(
         path=Path("/tmp/foo.txt"),
         content="hello world",

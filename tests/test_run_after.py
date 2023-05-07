@@ -10,26 +10,21 @@ def local_host():
     return LocalHost()
 
 
-def test_none(tmp_path, local_host, Stack):
+def test_none(tmp_path, local_host, stack):
     path = tmp_path / "file"
+    stack.cmd = local_host.command(args=["touch", path])
 
-    class Bench(Stack):
-        def build(self):
-            self.cmd = local_host.command(
-                args=["touch", path],
-            )
-
-    apply(Bench(), deploy=True)
+    apply(stack, deploy=True)
     assert path.is_file()
     path.unlink()
-    apply(Bench(), deploy=True)
+    apply(stack, deploy=True)
     assert path.is_file()
 
 
-def test_file(tmp_path, local_host, Stack):
+def test_file(tmp_path, local_host, TestingStack):
     out_path = tmp_path / "output"
 
-    class Bench(Stack):
+    class Bench(TestingStack):
         class Props:
             content = Prop(str)
 
@@ -60,11 +55,11 @@ def test_file(tmp_path, local_host, Stack):
     assert out_path.read_text() == "final"
 
 
-def test_command(tmp_path, local_host, Stack):
+def test_command(tmp_path, local_host, TestingStack):
     mid_path = tmp_path / "middle"
     out_path = tmp_path / "output"
 
-    class Bench(Stack):
+    class Bench(TestingStack):
         class Props:
             content = Prop(str)
 

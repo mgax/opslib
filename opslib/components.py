@@ -1,8 +1,10 @@
 import logging
+import sys
 from functools import cached_property
+from pathlib import Path
 
 from .props import InstanceProps
-from .state import StateDirectory, default_state_directory
+from .state import StateDirectory
 
 logger = logging.getLogger(__name__)
 
@@ -10,10 +12,11 @@ logger = logging.getLogger(__name__)
 class Meta:
     statedir = StateDirectory()
 
-    def __init__(self, component, name, parent):
+    def __init__(self, component, name, parent, stateroot=None):
         self.component = component
         self.name = name
         self.parent = parent
+        self.stateroot = stateroot
 
     @cached_property
     def full_name(self):
@@ -88,27 +91,25 @@ class Component:
         """
 
 
+def get_stateroot(import_name):
+    module = sys.modules[import_name]
+    return Path(module.__file__).parent / ".opslib"
+
+
 class Stack(Component):
-    """
-    Stack represents the root of the component stack. It behaves like a regular
-    :class:`Component`, except that its ``build()`` method is called when it's
-    instantiated.
-    """
+    def __init__(self, import_name=None, stateroot=None, **kwargs):
+        if import_name is None and stateroot is None:
+            raise ValueError("Either `import_name` or `stateroot` must be set")
 
-    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._meta = self.Meta(component=self, name="__root__", parent=None)
+
+        self._meta = self.Meta(
+            component=self,
+            name="__root__",
+            parent=None,
+            stateroot=stateroot or get_stateroot(import_name),
+        )
         self.build()
-
-    def get_state_directory(self):
-        """
-        Returns the directory where opslib will keep its state. Defaults to a
-        directory named ``.opslib`` in the parent folder of the file where the
-        class is defined. Override this method if you want to store state
-        elsewhere.
-        """
-
-        return default_state_directory(self)
 
 
 def walk(component):

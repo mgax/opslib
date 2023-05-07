@@ -2,26 +2,25 @@ from pathlib import Path
 
 import pytest
 
-from opslib.components import Component, Stack
+from opslib.components import Component, Stack, get_stateroot
+from opslib.lazy import evaluate
 
 
-def test_init_statedir(Stack, tmp_path):
-    bench = Stack()
-    bench.box = Component()
-    bench.box._meta.statedir.init()
-    assert bench.box._meta.statedir.path == tmp_path / "statedir" / "box" / "_statedir"
-    assert bench.box._meta.statedir.path.exists()
+def test_init_statedir(stack, tmp_path):
+    stack.box = Component()
+    path = evaluate(stack.box._meta.statedir.path)
+    assert path == tmp_path / "statedir" / "box" / "_statedir"
+    assert path.exists()
 
 
 def test_default_state_prefix():
-    class Bench(Stack):
-        pass
-
-    assert Bench().get_state_directory() == Path(__file__).parent / ".opslib"
+    assert get_stateroot(__name__) == Path(__file__).parent / ".opslib"
 
 
 def test_guard_statedir_outside_tmp():
+    vagrant = Stack(__name__)
+
     with pytest.raises(AssertionError) as error:
-        Stack()._meta.statedir.init()
+        evaluate(vagrant._meta.statedir.path)
 
     assert "No statedir outside tmp" in error.value.args[0]

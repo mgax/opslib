@@ -15,7 +15,7 @@ def mock_deploy():
 
 
 @pytest.fixture
-def Bench(Stack, tmp_path, mock_deploy):
+def Bench(TestingStack, tmp_path, mock_deploy):
     path = tmp_path / "target.txt"
 
     class Target(Component):
@@ -43,7 +43,7 @@ def Bench(Stack, tmp_path, mock_deploy):
             path.write_text(self.content)
             return Result(changed=True)
 
-    class Bench(Stack):
+    class Bench(TestingStack):
         class Props:
             content = Prop(str)
 

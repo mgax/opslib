@@ -5,8 +5,7 @@ from opslib.operations import apply
 
 
 @pytest.mark.slow
-def test_unit_enable(ssh_container, Stack):
-    stack = Stack()
+def test_unit_enable(ssh_container, stack):
     stack.unit = SystemdUnit(
         host=ssh_container.sudo(),
         name="httplogs.service",

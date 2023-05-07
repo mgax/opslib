@@ -6,8 +6,10 @@ from textwrap import dedent
 
 import pytest
 
+from opslib.components import Stack
 from opslib.local import run
 from opslib.places import SshHost
+from opslib.state import ComponentStateDirectory
 
 IMAGE = "opslib-tests"
 SSH_PORT = 22022
@@ -139,23 +141,24 @@ def pytest_collection_modifyitems(config, items):
 
 @pytest.fixture(autouse=True)
 def no_statedir_outside_tmp_path(tmp_path, monkeypatch):
-    from opslib import state
+    original_mkdir = ComponentStateDirectory._mkdir
 
-    original_init = state.ComponentStateDirectory.init
+    def mock_mkdir(self, path):
+        assert path.is_relative_to(tmp_path), "No statedir outside tmp"
+        original_mkdir(self, path)
 
-    def mock_init(self):
-        assert self._prefix.is_relative_to(tmp_path), "No statedir outside tmp"
-        original_init(self)
-
-    monkeypatch.setattr(state.ComponentStateDirectory, "init", mock_init)
+    monkeypatch.setattr(ComponentStateDirectory, "_mkdir", mock_mkdir)
 
 
 @pytest.fixture
-def Stack(tmp_path):
-    from opslib.components import Stack
-
+def TestingStack(tmp_path):
     class TestingStack(Stack):
-        def get_state_directory(self):
-            return tmp_path / "statedir"
+        def __init__(self, **kwargs):
+            super().__init__(stateroot=tmp_path / "statedir", **kwargs)
 
     return TestingStack
+
+
+@pytest.fixture
+def stack(TestingStack):
+    return TestingStack()

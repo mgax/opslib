@@ -15,9 +15,8 @@ def local_host():
     return LocalHost()
 
 
-def test_file_from_path(tmp_path, local_host, Stack):
+def test_file_from_path(tmp_path, local_host, stack):
     path = tmp_path / "foo.txt"
-    stack = Stack()
     stack.foo = local_host.file(
         path=path,
         content="hello foo",
@@ -29,7 +28,7 @@ def test_file_from_path(tmp_path, local_host, Stack):
         assert f.read() == "hello foo"
 
 
-def test_file_lazy_content(tmp_path, local_host, Stack):
+def test_file_lazy_content(tmp_path, local_host, stack):
     path = tmp_path / "foo.txt"
     called = False
 
@@ -38,7 +37,6 @@ def test_file_lazy_content(tmp_path, local_host, Stack):
         called = True
         return "hello world"
 
-    stack = Stack()
     stack.foo = local_host.file(
         path=path,
         content=Lazy(get_content),
@@ -52,9 +50,8 @@ def test_file_lazy_content(tmp_path, local_host, Stack):
         assert f.read() == "hello world"
 
 
-def test_directory_from_path(tmp_path, local_host, Stack):
+def test_directory_from_path(tmp_path, local_host, stack):
     path = tmp_path / "foo"
-    stack = Stack()
     stack.foo = local_host.directory(
         path=path,
     )
@@ -64,9 +61,8 @@ def test_directory_from_path(tmp_path, local_host, Stack):
     assert path.is_dir()
 
 
-def test_directory_from_string_path(tmp_path, local_host, Stack):
+def test_directory_from_string_path(tmp_path, local_host, stack):
     path = tmp_path / "foo"
-    stack = Stack()
     stack.foo = local_host.directory(str(path))
 
     apply(stack, deploy=True)
@@ -74,9 +70,8 @@ def test_directory_from_string_path(tmp_path, local_host, Stack):
     assert path.is_dir()
 
 
-def test_subdir(tmp_path, local_host, Stack):
+def test_subdir(tmp_path, local_host, stack):
     path = tmp_path / "foo"
-    stack = Stack()
     stack.foo = local_host.directory(
         path=path,
     )
@@ -87,9 +82,8 @@ def test_subdir(tmp_path, local_host, Stack):
     assert (path / "bar").is_dir()
 
 
-def test_truediv(tmp_path, local_host, Stack):
+def test_truediv(tmp_path, local_host, stack):
     path = tmp_path / "foo"
-    stack = Stack()
     stack.foo = local_host.directory(
         path=path,
     )
@@ -100,9 +94,8 @@ def test_truediv(tmp_path, local_host, Stack):
     assert (path / "bar").is_dir()
 
 
-def test_file_from_directory(tmp_path, local_host, Stack):
+def test_file_from_directory(tmp_path, local_host, stack):
     path = tmp_path / "foo.txt"
-    stack = Stack()
     stack.foo = local_host.directory(
         path=path,
     )
@@ -117,9 +110,8 @@ def test_file_from_directory(tmp_path, local_host, Stack):
         assert f.read() == "hello bar"
 
 
-def test_command(tmp_path, local_host, Stack):
+def test_command(tmp_path, local_host, stack):
     path = tmp_path / "foo"
-    stack = Stack()
     stack.foo = local_host.command(
         args=["touch", str(path)],
     )
@@ -129,8 +121,7 @@ def test_command(tmp_path, local_host, Stack):
     assert path.is_file()
 
 
-def test_command_with_input(tmp_path, local_host, Stack):
-    stack = Stack()
+def test_command_with_input(tmp_path, local_host, stack):
     stack.foo = local_host.command(
         input=dedent(
             f"""\
@@ -145,9 +136,8 @@ def test_command_with_input(tmp_path, local_host, Stack):
     assert (tmp_path / "foo").is_file()
 
 
-def test_command_cli_run(tmp_path, local_host, Stack):
+def test_command_cli_run(tmp_path, local_host, stack):
     path = tmp_path / "file"
-    stack = Stack()
     stack.foo = local_host.command(
         args=["touch", path],
     )
@@ -157,12 +147,11 @@ def test_command_cli_run(tmp_path, local_host, Stack):
     assert path.is_file()
 
 
-def test_file_content_diff(tmp_path, local_host, capsys, Stack):
+def test_file_content_diff(tmp_path, local_host, capsys, stack):
     foo_path = tmp_path / "foo.txt"
     with foo_path.open("w") as f:
         f.write("hello\nworld\n")
 
-    stack = Stack()
     stack.foo = local_host.file(
         path=foo_path,
         content="hello\nthere\n",
@@ -190,11 +179,10 @@ def test_file_content_diff(tmp_path, local_host, capsys, Stack):
         assert f.read() == "hello\nworld\n", "Target file must not change"
 
 
-def test_file_mode_diff(tmp_path, local_host, capsys, Stack):
+def test_file_mode_diff(tmp_path, local_host, capsys, stack):
     foo_path = tmp_path / "foo.txt"
     foo_path.touch(mode=0o644)
 
-    stack = Stack()
     stack.foo = local_host.file(
         path=foo_path,
         content="",

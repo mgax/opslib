@@ -5,11 +5,11 @@ from opslib.state import JsonState
 
 
 @pytest.fixture
-def Bench(Stack):
+def Bench(TestingStack):
     class Box(Component):
         state = JsonState()
 
-    class Bench(Stack):
+    class Bench(TestingStack):
         def build(self):
             self.box = Box()
 

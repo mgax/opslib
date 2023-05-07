@@ -51,9 +51,8 @@ def test_errors():
     assert result.stderr == "dont panic"
 
 
-def test_ansible_action(tmp_path, Stack):
+def test_ansible_action(tmp_path, stack):
     foo_path = tmp_path / "foo"
-    stack = Stack()
     host = LocalHost()
     stack.action = AnsibleAction(
         hostname=host.hostname,
@@ -69,8 +68,7 @@ def test_ansible_action(tmp_path, Stack):
 
 
 @pytest.mark.parametrize("op", [dict(refresh=True), dict(deploy=True, dry_run=True)])
-def test_check_not_supported(Stack, op):
-    stack = Stack()
+def test_check_not_supported(stack, op):
     stack.action = LocalHost().ansible_action(
         module="ansible.builtin.shell",
         args=dict(cmd="echo hello world"),
