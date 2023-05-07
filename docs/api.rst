@@ -1,9 +1,6 @@
 API
 ===
 
-Components
-----------
-
 .. module:: opslib.components
 
 .. autoclass:: Component
@@ -32,9 +29,6 @@ Components
 
 .. autofunction:: lazy_property
 
-Operations
-----------
-
 .. module:: opslib.operations
 
 .. autoclass:: Operation
@@ -61,9 +55,6 @@ Operations
 
 .. autofunction:: main
 
-Places
-------
-
 .. module:: opslib.places
 
 .. autoclass:: BaseHost
@@ -85,9 +76,6 @@ Places
 .. autoclass:: Command
    :members: run
 
-Ansible
--------
-
 .. module:: opslib.ansible
 
 .. autoclass:: AnsibleAction
@@ -96,9 +84,6 @@ Ansible
 .. autoclass:: AnsibleResult
 
 .. autofunction:: run_ansible
-
-Terraform
----------
 
 .. module:: opslib.terraform
 

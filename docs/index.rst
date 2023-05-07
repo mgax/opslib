@@ -7,6 +7,7 @@ Welcome to opslib's documentation!
 
    tutorial/index
    installation
+   stack
    components
    cli
    contributing

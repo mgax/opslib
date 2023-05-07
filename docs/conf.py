@@ -5,6 +5,7 @@ author = "Alex Morega"
 extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.autodoc",
+    "sphinx.ext.autosectionlabel",
 ]
 
 intersphinx_mapping = {
