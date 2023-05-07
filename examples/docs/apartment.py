@@ -15,7 +15,7 @@ class House(Component):
         self.oscar = Cat()
 
 
-stack = Stack()
+stack = Stack(__name__)
 stack.apartment = House()
 
 print(list(stack))

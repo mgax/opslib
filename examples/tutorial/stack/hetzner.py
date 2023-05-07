@@ -26,11 +26,6 @@ class VPS(Component):
             output=["id"],
         )
 
-        self.host = SshHost(
-            hostname=self.server.output["ipv4_address"],
-            username="root",
-        )
-
         self.server = self.provider.resource(
             type="hcloud_server",
             body=dict(
@@ -43,6 +38,11 @@ class VPS(Component):
                 ],
             ),
             output=["ipv4_address"],
+        )
+
+        self.host = SshHost(
+            hostname=self.server.output["ipv4_address"],
+            username="root",
         )
 
         self.install_docker = self.host.ansible_action(

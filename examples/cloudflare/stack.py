@@ -168,29 +168,24 @@ class App(Component):
             )
 
 
-class Demo(Stack):
-    def build(self):
-        self.host = LocalHost()
-        self.directory = self.host.directory(Path(__file__).parent / "target")
+stack = Stack(__name__)
+stack.host = LocalHost()
+stack.directory = stack.host.directory(Path(__file__).parent / "target")
 
-        allow_emails_env = os.environ.get("CLOUDFLARE_ALLOW_EMAILS")
+allow_emails_env = os.environ.get("CLOUDFLARE_ALLOW_EMAILS")
 
-        self.cloudflare = Cloudflare(
-            account_id=os.environ["CLOUDFLARE_ACCOUNT_ID"],
-            zone_id=os.environ["CLOUDFLARE_ZONE_ID"],
-            zone_name=os.environ["CLOUDFLARE_ZONE_NAME"],
-            name=os.environ["CLOUDFLARE_TUNNEL_NAME"],
-            secret=b64encode(
-                os.environ["CLOUDFLARE_TUNNEL_SECRET"].encode("utf8")
-            ).decode("utf8"),
-            allow_emails=allow_emails_env.split(",") if allow_emails_env else None,
-        )
+stack.cloudflare = Cloudflare(
+    account_id=os.environ["CLOUDFLARE_ACCOUNT_ID"],
+    zone_id=os.environ["CLOUDFLARE_ZONE_ID"],
+    zone_name=os.environ["CLOUDFLARE_ZONE_NAME"],
+    name=os.environ["CLOUDFLARE_TUNNEL_NAME"],
+    secret=b64encode(os.environ["CLOUDFLARE_TUNNEL_SECRET"].encode("utf8")).decode(
+        "utf8"
+    ),
+    allow_emails=allow_emails_env.split(",") if allow_emails_env else None,
+)
 
-        self.app = App(
-            directory=self.directory / "opslib-examples-cloudflare",
-            sidecar=self.cloudflare.sidecar,
-        )
-
-
-def get_stack():
-    return Demo()
+stack.app = App(
+    directory=stack.directory / "opslib-examples-cloudflare",
+    sidecar=stack.cloudflare.sidecar,
+)

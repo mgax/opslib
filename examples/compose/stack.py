@@ -107,15 +107,10 @@ class App(Component):
             )
 
 
-class Demo(Stack):
-    def build(self):
-        self.host = LocalHost()
-        self.directory = self.host.directory(Path(__file__).parent / "target")
-        self.app = App(
-            directory=self.directory / "opslib-examples-compose",
-            listen="3000",
-        )
-
-
-def get_stack():
-    return Demo()
+stack = Stack(__name__)
+stack.host = LocalHost()
+stack.directory = stack.host.directory(Path(__file__).parent / "target")
+stack.app = App(
+    directory=stack.directory / "opslib-examples-compose",
+    listen="3000",
+)

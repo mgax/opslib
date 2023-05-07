@@ -7,51 +7,46 @@ from .dns import CloudflareZone, MailDnsRecords
 from .hetzner import VPS
 from .mailu import Mailu
 
+zone_name = os.environ["CLOUDFLARE_ZONE_NAME"]
+hostname = os.environ["MAILU_HOSTNAME"]
+main_domain = os.environ["MAILU_DOMAIN"]
+restic_password = os.environ["RESTIC_PASSWORD"]
 
-class MailuExample(Stack):
-    def build(self):
-        zone_name = os.environ["CLOUDFLARE_ZONE_NAME"]
-        hostname = os.environ["MAILU_HOSTNAME"]
-        main_domain = os.environ["MAILU_DOMAIN"]
-        restic_password = os.environ["RESTIC_PASSWORD"]
+stack = Stack(__name__)
 
-        self.vps = VPS(
-            hostname=hostname,
-        )
+stack.vps = VPS(
+    hostname=hostname,
+)
 
-        self.zone = CloudflareZone(
-            zone_name=zone_name,
-        )
+stack.zone = CloudflareZone(
+    zone_name=zone_name,
+)
 
-        self.a_record = self.zone.record(
-            fqdn=hostname,
-            type="A",
-            body=dict(
-                value=self.vps.server.output["ipv4_address"],
-            ),
-        )
+stack.a_record = stack.zone.record(
+    fqdn=hostname,
+    type="A",
+    body=dict(
+        value=stack.vps.server.output["ipv4_address"],
+    ),
+)
 
-        self.mailu = Mailu(
-            hostname=hostname,
-            main_domain=main_domain,
-            directory=self.vps.host.directory("/opt/mailu"),
-            volumes=self.vps.host.directory("/opt/volumes"),
-            public_address=self.vps.server.output["ipv4_address"],
-        )
+stack.mailu = Mailu(
+    hostname=hostname,
+    main_domain=main_domain,
+    directory=stack.vps.host.directory("/opt/mailu"),
+    volumes=stack.vps.host.directory("/opt/volumes"),
+    public_address=stack.vps.server.output["ipv4_address"],
+)
 
-        self.dns = MailDnsRecords(
-            mailu=self.mailu,
-            zone=self.zone,
-        )
+stack.dns = MailDnsRecords(
+    mailu=stack.mailu,
+    zone=stack.zone,
+)
 
-        self.backups = Backups(
-            directory=self.vps.host.directory("/opt/backups"),
-            b2_name=f"opslib-backups-{hostname.replace('.', '-')}",
-            restic_password=restic_password,
-            backup_paths=self.mailu.backup_paths,
-            backup_exclude=self.mailu.backup_exclude,
-        )
-
-
-def get_stack():
-    return MailuExample()
+stack.backups = Backups(
+    directory=stack.vps.host.directory("/opt/backups"),
+    b2_name=f"opslib-backups-{hostname.replace('.', '-')}",
+    restic_password=restic_password,
+    backup_paths=stack.mailu.backup_paths,
+    backup_exclude=stack.mailu.backup_exclude,
+)

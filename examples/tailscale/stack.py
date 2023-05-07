@@ -24,11 +24,6 @@ class VPS(Component):
             output=["id"],
         )
 
-        self.host = SshHost(
-            hostname=self.server.output["ipv4_address"],
-            username="root",
-        )
-
         self.server = self.props.hetzner.resource(
             type="hcloud_server",
             body=dict(
@@ -43,29 +38,30 @@ class VPS(Component):
             output=["ipv4_address"],
         )
 
+        self.host = SshHost(
+            hostname=self.server.output["ipv4_address"],
+            username="root",
+        )
+
         self.tailscale = self.props.tailnet.node(
             run=self.host.run,
         )
 
 
-class Example(Stack):
-    def build(self):
-        self.tailnet = TailscaleNetwork(
-            api_key=os.environ["TAILSCALE_API_KEY"],
-        )
+stack = Stack(__name__)
 
-        self.hetzner = TerraformProvider(
-            name="hcloud",
-            source="hetznercloud/hcloud",
-            version="~> 1.36.2",
-        )
+stack.tailnet = TailscaleNetwork(
+    api_key=os.environ["TAILSCALE_API_KEY"],
+)
 
-        self.vps = VPS(
-            hetzner=self.hetzner,
-            name="opslib-examples-tailnet",
-            tailnet=self.tailnet,
-        )
+stack.hetzner = TerraformProvider(
+    name="hcloud",
+    source="hetznercloud/hcloud",
+    version="~> 1.36.2",
+)
 
-
-def get_stack():
-    return Example()
+stack.vps = VPS(
+    hetzner=stack.hetzner,
+    name="opslib-examples-tailnet",
+    tailnet=stack.tailnet,
+)

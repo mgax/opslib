@@ -15,7 +15,7 @@ class Cat(Component):
             )
 
 
-stack = Stack()
+stack = Stack(__name__)
 stack.spot = Cat(color="orange", energy=11)
 print(stack.spot.props)
 print(stack.spot.play.run().output)

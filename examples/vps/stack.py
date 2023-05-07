@@ -36,19 +36,15 @@ class VPS(Component):
         )
 
 
-class Example(Stack):
-    def build(self):
-        self.hetzner = TerraformProvider(
-            name="hcloud",
-            source="hetznercloud/hcloud",
-            version="~> 1.36.2",
-        )
+stack = Stack(__name__)
 
-        self.vps = VPS(
-            hetzner=self.hetzner,
-            name="mycodeforge",
-        )
+stack.hetzner = TerraformProvider(
+    name="hcloud",
+    source="hetznercloud/hcloud",
+    version="~> 1.36.2",
+)
 
-
-def get_stack():
-    return Example()
+stack.vps = VPS(
+    hetzner=stack.hetzner,
+    name="mycodeforge",
+)

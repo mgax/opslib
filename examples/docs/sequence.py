@@ -22,8 +22,5 @@ class Demo(Stack):
         print("all done")
 
 
-print("house:", repr(Demo().house))
-
-
-def get_stack():
-    return Demo()
+stack = Demo(__name__)
+print("house:", repr(stack.house))
