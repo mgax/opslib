@@ -15,6 +15,7 @@ from ansible.vars.manager import VariableManager
 from .callbacks import Callbacks
 from .components import Component
 from .lazy import evaluate
+from .places import BaseHost
 from .props import Prop
 from .results import Result
 from .uptodate import UpToDate
@@ -149,8 +150,7 @@ class AnsibleAction(Component):
     """
     The AnsibleAction component executes an Ansible module.
 
-    :param hostname: Name of the host to act on. May be :class:`~opslib.lazy.Lazy`.
-    :param ansible_variables: List of variables to configure Ansible.
+    :param host: :class:`~opslib.places.BaseHost` to act on.
     :param module: Name of the Ansible module to invoke, e.g.
                    ``"ansible.builtin.copy"``.
     :param args: Dictionary of arguments for the module. Consult each module's
@@ -163,8 +163,7 @@ class AnsibleAction(Component):
     """
 
     class Props:
-        hostname = Prop(str, lazy=True)
-        ansible_variables = Prop(list)
+        host = Prop(BaseHost)
         module = Prop(str)
         args = Prop(dict)
         format_output = Prop(Optional[Callable])
@@ -182,8 +181,8 @@ class AnsibleAction(Component):
     @uptodate.snapshot
     def _get_ansible_args(self):
         return dict(
-            hostname=evaluate(self.props.hostname),
-            ansible_variables=self.props.ansible_variables,
+            hostname=evaluate(self.props.host.hostname),
+            ansible_variables=self.props.host.ansible_variables,
             action=self.action,
         )
 

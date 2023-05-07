@@ -53,10 +53,9 @@ def test_errors():
 
 def test_ansible_action(tmp_path, stack):
     foo_path = tmp_path / "foo"
-    host = LocalHost()
+    stack.host = LocalHost()
     stack.action = AnsibleAction(
-        hostname=host.hostname,
-        ansible_variables=host.ansible_variables,
+        host=stack.host,
         module="ansible.builtin.file",
         args=dict(
             path=str(foo_path),

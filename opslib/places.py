@@ -6,7 +6,6 @@ from typing import Optional, Union
 
 import click
 
-from .ansible import AnsibleAction
 from .callbacks import Callbacks
 from .components import Component
 from .lazy import Lazy, evaluate
@@ -68,9 +67,10 @@ class BaseHost(Component):
         forwarded as props to *AnsibleAction*.
         """
 
+        from .ansible import AnsibleAction
+
         return AnsibleAction(
-            hostname=self.hostname,
-            ansible_variables=self.ansible_variables,
+            host=self,
             **props,
         )
 
