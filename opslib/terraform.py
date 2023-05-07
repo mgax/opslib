@@ -248,7 +248,7 @@ class TerraformResource(_TerraformComponent):
         return self.run("import", f"{self.props.type}.thing", evaluate(resource_id))
 
 
-class TerraformDataSource(TerraformResource):
+class TerraformDataSource(_TerraformComponent):
     """
     The TerraformDataSource component retrieves data through a Terraform data
     source.
