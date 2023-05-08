@@ -1,7 +1,9 @@
 Building a Stack
 ================
 
-*The Stack* is the definition of your infrastructure that Opslib will manage. It's made up of :doc:`components <components>`, with the root component being an instance of :class:`~opslib.components.Stack`.
+*The Stack* is the definition of your infrastructure that Opslib will manage.
+It's made up of :doc:`components <components>`, with the root component being
+an instance of :class:`~opslib.components.Stack`.
 
 .. code-block:: python
     :caption: ``stack.py``
@@ -10,14 +12,18 @@ Building a Stack
 
     stack = Stack(__name__)
 
-Opslib tries to import a module named ``stack`` (which is why our file is called ``stack.py``). In the module, it looks for an object named ``stack``.
+Opslib tries to import a module named ``stack`` (which is why our file is
+called ``stack.py``). In the module, it looks for an object named ``stack``.
 
-The ``__name__`` argument helps Opslib figure out where the code is defined, so it can create its ``.opslib`` directory, next to ``stack.py``, to store its state.
+The ``__name__`` argument helps Opslib figure out where the code is defined, so
+it can create its ``.opslib`` directory, next to ``stack.py``, to store its
+state.
 
 Attaching components
 --------------------
 
-To build up the stack, we attach components to it, by setting them as attributes:
+To build up the stack, we attach components to it, by setting them as
+attributes:
 
 .. code-block:: python
 
@@ -30,7 +36,8 @@ To build up the stack, we attach components to it, by setting them as attributes
         content="Hello World!\n"
     )
 
-At this point, the ``host`` and ``hello`` components are attached to the stack, and will be deployed when we run ``opslib - deploy``.
+At this point, the ``host`` and ``hello`` components are attached to the stack,
+and will be deployed when we run ``opslib - deploy``.
 
 .. code-block:: none
 
@@ -41,7 +48,8 @@ At this point, the ``host`` and ``hello`` components are attached to the stack, 
 Defining components
 -------------------
 
-Attaching everything to the root stack object doesn't scale much, so we'll want to organize components into higher level structures:
+Attaching everything to the root stack object doesn't scale much, so we'll want
+to organize components into higher level structures:
 
 .. code-block:: python
 
@@ -64,7 +72,9 @@ Attaching everything to the root stack object doesn't scale much, so we'll want 
 
 The ``Bucket`` component receives two :ref:`Props`: ``host`` and ``color``.
 
-The component's :meth:`~opslib.components.Component.build` method creates sub-components and attaches them. It's called when the ``Bucket`` component is attached to something (in our case, the ``stack``).
+The component's :meth:`~opslib.components.Component.build` method creates
+sub-components and attaches them. It's called when the ``Bucket`` component is
+attached to something (in our case, the ``stack``).
 
 .. note::
 

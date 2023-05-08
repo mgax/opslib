@@ -9,6 +9,7 @@ Welcome to opslib's documentation!
    installation
    stack
    components
+   batteries/index
    cli
    contributing
    api
