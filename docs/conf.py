@@ -1,4 +1,4 @@
-project = "opslib"
+project = "Opslib"
 copyright = "2023, Alex Morega"
 author = "Alex Morega"
 
