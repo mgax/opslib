@@ -63,6 +63,10 @@ property, which is a dictionary of lazy values.
 
 .. _Terraform Resource: https://developer.hashicorp.com/terraform/language/resources
 
+After a successful deployment, the component instance is marked as "up to
+date", and will be skipped in subsequent deployments, unless any of the props
+change. To check if remote state has changed, run ``opslib - diff``.
+
 Many providers allow importing pre-existing resources into Terraform. Opslib
 also supports this:
 

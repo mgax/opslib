@@ -9,3 +9,4 @@ Opslib comes with some essential batteries included. Between them, they cover ma
 
    places
    terraform
+   ansible
