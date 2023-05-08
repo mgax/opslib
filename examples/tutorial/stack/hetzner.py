@@ -19,7 +19,7 @@ class VPS(Component):
 
         self.ssh_key = self.provider.resource(
             type="hcloud_ssh_key",
-            body=dict(
+            args=dict(
                 name="opslib-tutorial",
                 public_key=Path("~/.ssh/id_rsa.pub").expanduser().read_text(),
             ),
@@ -28,7 +28,7 @@ class VPS(Component):
 
         self.server = self.provider.resource(
             type="hcloud_server",
-            body=dict(
+            args=dict(
                 name=self.props.name,
                 server_type="cx11",
                 image="debian-11",

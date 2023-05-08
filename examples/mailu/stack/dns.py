@@ -47,7 +47,7 @@ class CloudflareZone(Component):
 
         self.zone_lookup = self.provider.data(
             type="cloudflare_zones",
-            body=dict(
+            args=dict(
                 filter=dict(
                     name=self.props.zone_name,
                 ),
@@ -61,19 +61,19 @@ class CloudflareZone(Component):
         assert len(zones) == 1, f"Expected one zone, found {len(zones)}: {zones!r}"
         return zones[0]["id"]
 
-    def record(self, fqdn, type, body=None):
-        def get_body():
+    def record(self, fqdn, type, args=None):
+        def get_args():
             return dict(
                 zone_id=evaluate(self.zone_id),
                 name=self.name_in_zone(fqdn),
                 type=type,
                 proxied=False,
-                **evaluate(body),
+                **evaluate(args),
             )
 
         return self.provider.resource(
             type="cloudflare_record",
-            body=Lazy(get_body),
+            args=Lazy(get_args),
         )
 
     def name_in_zone(self, fqdn):
@@ -99,7 +99,7 @@ class MailDnsRecords(Component):
             name_format, type = DNS_RECORDS[key]
             name = self.get_name(name_format)
 
-            def get_body():
+            def get_args():
                 line = evaluate(self.mailu_records)[key]
                 (_name, _ttl, _in, _type, _value) = line.split(" ", 4)
                 if (_name, _in, _type) != (name, "IN", type):
@@ -154,7 +154,7 @@ class MailDnsRecords(Component):
             return zone.record(
                 fqdn=name.rstrip("."),
                 type=type,
-                body=Lazy(get_body),
+                args=Lazy(get_args),
             )
 
         for key in DNS_RECORDS:

@@ -25,7 +25,7 @@ stack.zone = CloudflareZone(
 stack.a_record = stack.zone.record(
     fqdn=hostname,
     type="A",
-    body=dict(
+    args=dict(
         value=stack.vps.server.output["ipv4_address"],
     ),
 )

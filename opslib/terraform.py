@@ -63,16 +63,16 @@ class TerraformProvider(Component):
 
     @cached_property
     def config(self):
-        provider_body = dict()
+        provider_args = dict()
         if self.props.source:
-            provider_body["source"] = self.props.source
+            provider_args["source"] = self.props.source
         if self.props.version:
-            provider_body["version"] = self.props.version
+            provider_args["version"] = self.props.version
 
         config = dict(
             terraform=dict(
                 required_providers={
-                    self.props.name: provider_body,
+                    self.props.name: provider_args,
                 },
             ),
         )
@@ -109,7 +109,7 @@ class _TerraformComponent(Component):
     class Props:
         provider = Prop(Optional[TerraformProvider])
         type = Prop(str)
-        body = Prop(dict, default={}, lazy=True)
+        args = Prop(dict, default={}, lazy=True)
         output = Prop(Optional[list])
 
     @cached_property
@@ -187,7 +187,7 @@ class TerraformResource(_TerraformComponent):
                      Technically optional because some builtin resource types
                      of Terraform don't belong to any provider.
     :param type: Type of resource, e.g. ``"aws_vpc"``.
-    :param body: Arguments of the resource (:class:`dict`). Consult the
+    :param args: Arguments of the resource (:class:`dict`). Consult the
                  provider's documentation for the arguments supported by each
                  resource. May be :class:`~opslib.lazy.Lazy`.
     :param output: List of attributes exported by the resource to be fetched
@@ -205,7 +205,7 @@ class TerraformResource(_TerraformComponent):
             provider.config if provider else {},
             resource={
                 self.props.type: {
-                    "thing": evaluate(self.props.body),
+                    "thing": evaluate(self.props.args),
                 },
             },
         )
@@ -257,7 +257,7 @@ class TerraformDataSource(_TerraformComponent):
                      Technically optional because some builtin data source
                      types of Terraform don't belong to any provider.
     :param type: Type of data source, e.g. ``"aws_vpc"``.
-    :param body: Arguments of the data source (:class:`dict`). Consult the
+    :param args: Arguments of the data source (:class:`dict`). Consult the
                  provider's documentation for the arguments supported by each
                  data source. May be :class:`~opslib.lazy.Lazy`.
     :param output: List of attributes exported by the data source to be fetched
@@ -275,7 +275,7 @@ class TerraformDataSource(_TerraformComponent):
             provider.config if provider else {},
             data={
                 self.props.type: {
-                    "thing": evaluate(self.props.body),
+                    "thing": evaluate(self.props.args),
                 },
             },
         )

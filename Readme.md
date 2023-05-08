@@ -26,7 +26,7 @@ stack.hetzner = TerraformProvider(
 
 stack.server = stack.hetzner.resource(
     type="hcloud_server",
-    body=dict(
+    args=dict(
         name="opslib-example",
         server_type="cx11",
         image="debian-11",

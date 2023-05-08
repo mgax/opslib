@@ -48,7 +48,7 @@ class Cloudflare(Component):
 
         self.tunnel = self.provider.resource(
             type="cloudflare_tunnel",
-            body=dict(
+            args=dict(
                 account_id=self.props.account_id,
                 name=self.props.name,
                 secret=self.props.secret,
@@ -58,7 +58,7 @@ class Cloudflare(Component):
 
         self.cname = self.provider.resource(
             type="cloudflare_record",
-            body=dict(
+            args=dict(
                 zone_id=self.props.zone_id,
                 name=self.props.name,
                 type="CNAME",
@@ -70,7 +70,7 @@ class Cloudflare(Component):
         if self.props.allow_emails is not None:
             self.access_application = self.provider.resource(
                 type="cloudflare_access_application",
-                body=dict(
+                args=dict(
                     zone_id=self.props.zone_id,
                     name=self.props.name,
                     domain=f"{self.props.name}.{self.props.zone_name}",
@@ -80,7 +80,7 @@ class Cloudflare(Component):
 
             self.policy = self.provider.resource(
                 type="cloudflare_access_policy",
-                body=dict(
+                args=dict(
                     application_id=self.access_application.output["id"],
                     zone_id=self.props.zone_id,
                     name="Login using email",

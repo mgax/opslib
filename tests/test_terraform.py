@@ -15,7 +15,7 @@ def local_stack(TestingStack, tmp_path):
     def create_local_stack(**file_props):
         path = tmp_path / "hello.txt"
         file_props.setdefault("type", "local_file")
-        file_props.setdefault("body", dict(content="world", filename=str(path)))
+        file_props.setdefault("args", dict(content="world", filename=str(path)))
 
         class LocalStack(TestingStack):
             def build(self):
@@ -124,7 +124,7 @@ def test_output_not_available(stack):
     )
     stack.order = stack.provider.resource(
         type="consul_service",
-        body=dict(
+        args=dict(
             name="foo",
             node="bar",
         ),
@@ -143,7 +143,7 @@ def test_output_not_available(stack):
 def test_import_resource(stack):
     stack.time = TerraformResource(
         type="time_static",
-        body={},
+        args={},
         output=["id"],
     )
     value = "2020-02-12T06:36:13Z"
@@ -163,7 +163,7 @@ def test_provider_config(stack, tmp_path):
     )
     stack.resource = stack.provider.resource(
         type="tfcoremock_simple_resource",
-        body=dict(
+        args=dict(
             number=13,
         ),
     )
@@ -184,7 +184,7 @@ def test_data_source(stack, tmp_path):
     )
     stack.source = stack.provider.data(
         type="local_file",
-        body=dict(
+        args=dict(
             filename=str(path),
         ),
         output=["content"],

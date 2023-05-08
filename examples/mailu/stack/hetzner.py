@@ -24,7 +24,7 @@ class VPS(Component):
 
         self.images = self.provider.data(
             type="hcloud_images",
-            body=dict(
+            args=dict(
                 with_architecture=["x86"],
             ),
             output=["images"],
@@ -32,7 +32,7 @@ class VPS(Component):
 
         self.server = self.provider.resource(
             type="hcloud_server",
-            body=dict(
+            args=dict(
                 name=self.props.hostname,
                 server_type="cx11",
                 image=self.image_id,
@@ -44,7 +44,7 @@ class VPS(Component):
 
         self.reverse_dns = self.provider.resource(
             type="hcloud_rdns",
-            body=dict(
+            args=dict(
                 server_id=self.server.output["id"],
                 ip_address=self.server.output["ipv4_address"],
                 dns_ptr=self.props.hostname,

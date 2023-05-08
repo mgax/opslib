@@ -40,7 +40,7 @@ class Backups(Component):
 
         self.bucket = self.provider.resource(
             type="b2_bucket",
-            body=dict(
+            args=dict(
                 bucket_name=self.props.b2_name,
                 bucket_type="allPrivate",
             ),
@@ -49,7 +49,7 @@ class Backups(Component):
 
         self.key = self.provider.resource(
             type="b2_application_key",
-            body=dict(
+            args=dict(
                 capabilities=self.KEY_CAPABILITIES,
                 key_name=self.props.b2_name,
                 bucket_id=self.bucket.output["bucket_id"],

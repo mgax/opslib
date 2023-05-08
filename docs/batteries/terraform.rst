@@ -29,7 +29,7 @@ query data sources.
 
     stack.www_record = stack.cloudflare.resource(
         type="cloudflare_record",
-        body=dict(
+        args=dict(
             zone_id=stack.zone.output["id"],
             type="A",
             name="www",
@@ -54,7 +54,7 @@ Resources
 ---------
 
 :class:`~opslib.terraform.TerraformResource` defines a single `Terraform
-Resource`_. The *body* prop provides a dictionary of arguments for the
+Resource`_. The *args* prop provides a dictionary of arguments for the
 resource.
 
 *output* (optional) is a list of attributes to be fetched from the resource.
@@ -77,7 +77,7 @@ Data Sources
 ------------
 
 :class:`~opslib.terraform.TerraformDataSource` defines a single `Terraform Data
-Source`_. The *body* prop provides a dictionary of arguments for the data
+Source`_. The *args* prop provides a dictionary of arguments for the data
 source.
 
 *output* (optional) is a list of attributes to be fetched from the data source.

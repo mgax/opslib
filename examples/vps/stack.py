@@ -12,7 +12,7 @@ class VPS(Component):
     def build(self):
         self.server = self.props.hetzner.resource(
             type="hcloud_server",
-            body=dict(
+            args=dict(
                 name=self.props.name,
                 server_type="cx11",
                 image="debian-11",

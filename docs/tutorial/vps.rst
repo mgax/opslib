@@ -41,7 +41,7 @@ Now let's define our VPS in a new file, ``stack/hetzner.py``. We configure the T
 
             self.ssh_key = self.provider.resource(
                 type="hcloud_ssh_key",
-                body=dict(
+                args=dict(
                     name="opslib-tutorial",
                     public_key=Path("~/.ssh/id_rsa.pub").expanduser().read_text(),
                 ),
@@ -50,7 +50,7 @@ Now let's define our VPS in a new file, ``stack/hetzner.py``. We configure the T
 
             self.server = self.provider.resource(
                 type="hcloud_server",
-                body=dict(
+                args=dict(
                     name=self.props.name,
                     server_type="cx11",
                     image="debian-11",
@@ -155,7 +155,7 @@ not yet available, since the key is not yet deployed. So let's deploy the key.
     opslib - diff
 
 Now there should be no errors. We could have deployed the whole stack in one
-go, instead of deploying ``vps.ssh_key`` separately, because the ``body``
+go, instead of deploying ``vps.ssh_key`` separately, because the ``args``
 prop of the server resource is only evaluated when it's time to deploy it.
 
 Let's go ahead and deploy the whole stack:

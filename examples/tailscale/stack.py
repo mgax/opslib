@@ -17,7 +17,7 @@ class VPS(Component):
     def build(self):
         self.ssh_key = self.props.hetzner.resource(
             type="hcloud_ssh_key",
-            body=dict(
+            args=dict(
                 name="opslib",
                 public_key=Path("~/.ssh/id_rsa.pub").expanduser().read_text(),
             ),
@@ -26,7 +26,7 @@ class VPS(Component):
 
         self.server = self.props.hetzner.resource(
             type="hcloud_server",
-            body=dict(
+            args=dict(
                 name=self.props.name,
                 server_type="cx11",
                 image="debian-11",
