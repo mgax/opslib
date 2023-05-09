@@ -5,7 +5,6 @@ Tutorial
    :caption: Contents:
    :maxdepth: 1
 
-   layout
    local
    vps
 
@@ -18,4 +17,5 @@ The completed project is available at
 https://github.com/mgax/opslib/tree/main/examples/tutorial; feel free to
 reference it if the code snippets in the tutorial are confusing.
 
-Continue to :doc:`layout`.
+First, follow the guide in :ref:`Getting Started`, then continue to
+:doc:`local`.
