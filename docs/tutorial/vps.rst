@@ -191,8 +191,8 @@ Then open Gitea in the browser at ``http://{ipv4_address}:3000/``.
 Configuring https is left as an exercise to the reader
 (https://docs.gitea.io/en-us/https-setup/).
 
-Tear-down
-^^^^^^^^^
+Tear-down the VPS
+^^^^^^^^^^^^^^^^^
 
 The VPS is billed hourly so we should delete it when we're done:
 

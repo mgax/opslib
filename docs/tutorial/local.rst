@@ -287,8 +287,8 @@ Let's call our ``compose`` command and give it the ``logs`` subcommand of
 This is quite a powerful way of interacting with our deployed resources,
 without explicitly shelling into remote hosts, changing directories, etc.
 
-Tear-down
-^^^^^^^^^
+Tear-down the local stack
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Now that we see it works locally, we can stop the local Gitea, because we'll
 deploy it to a VPS.
