@@ -122,12 +122,6 @@ class TailscaleNode(Component):
         return self.state.get("node_id")
 
     def add_commands(self, cli):
-        @cli.command(
-            context_settings=dict(
-                ignore_unknown_options=True,
-                allow_interspersed_args=False,
-            )
-        )
-        @click.argument("args", nargs=-1, type=click.UNPROCESSED)
+        @cli.forward_command
         def run(args):
             self.props.run("tailscale", *args, capture_output=False, exit=True)

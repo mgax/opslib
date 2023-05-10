@@ -49,9 +49,8 @@ class SystemdUnit(Component):
         )
 
     def add_commands(self, cli):
-        @cli.command(context_settings=dict(ignore_unknown_options=True))
+        @cli.forward_command
         @click.argument("command")
-        @click.argument("args", nargs=-1, type=click.UNPROCESSED)
         def systemctl(command, args):
             self.props.host.run(
                 "systemctl",
@@ -62,8 +61,7 @@ class SystemdUnit(Component):
                 exit=True,
             )
 
-        @cli.command(context_settings=dict(ignore_unknown_options=True))
-        @click.argument("args", nargs=-1, type=click.UNPROCESSED)
+        @cli.forward_command
         def journalctl(args):
             self.props.host.run(
                 "journalctl", "-u", self.props.name, *args, capture_output=False

@@ -44,8 +44,51 @@ def interact(banner=None, local=None):
     code.interact(banner=banner, local=local)
 
 
+class ComponentGroup(click.Group):
+    def forward_command(self, *args, **kwargs):
+        """
+        A specialized :meth:`click.Group.command` for commands that invoke
+        another command. Any unprocessed arguments are sent as an ``args``
+        tuple, to be forwarded to the other command. It's equivalent to the
+        following:
+
+        .. code-block:: python
+
+            @cli.command(
+                context_settings=dict(
+                    ignore_unknown_options=True,
+                    allow_interspersed_args=False,
+                )
+            )
+            @click.argument("args", nargs=-1, type=click.UNPROCESSED)
+            def foo(args):
+                print("foo called with:", args)
+        """
+
+        func = None
+        if len(args) == 1 and not kwargs and callable(args[0]):
+            func = args[0]
+            args = ()
+
+        def decorator(func):
+            kwargs.setdefault("context_settings", {}).update(
+                ignore_unknown_options=True,
+                allow_interspersed_args=False,
+            )
+            command = super(ComponentGroup, self).command(*args, **kwargs)(func)
+            command.params.append(
+                click.Argument(("args",), nargs=-1, type=click.UNPROCESSED)
+            )
+            return command
+
+        if func:
+            return decorator(func)
+
+        return decorator
+
+
 def get_cli(component):
-    @click.group()
+    @click.group(cls=ComponentGroup)
     def cli():
         pass
 
@@ -62,16 +105,9 @@ def get_cli(component):
     def shell():
         return interact(str(component), dict(self=component))
 
-    @cli.command(
-        "component",
-        context_settings=dict(
-            ignore_unknown_options=True,
-            allow_interspersed_args=False,
-        ),
-    )
+    @cli.forward_command("component")
     @click.pass_context
     @click.argument("path")
-    @click.argument("args", nargs=-1, type=click.UNPROCESSED)
     def component_(ctx, path, args):
         target = lookup(component, path)
         target_cli = get_cli(target)

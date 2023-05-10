@@ -1,8 +1,6 @@
 from io import StringIO
 from shlex import quote
 
-import click
-
 from opslib.components import Component
 from opslib.lazy import Lazy, evaluate, lazy_property
 from opslib.local import run
@@ -71,13 +69,7 @@ class ResticRepository(Component):
         return ResticPlan(repository=self, **props)
 
     def add_commands(self, cli):
-        @cli.command(
-            context_settings=dict(
-                ignore_unknown_options=True,
-                allow_interspersed_args=False,
-            )
-        )
-        @click.argument("args", nargs=-1, type=click.UNPROCESSED)
+        @cli.forward_command
         def run(args):
             self.run(*args, capture_output=False, exit=True)
 

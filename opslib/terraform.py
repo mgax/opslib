@@ -3,8 +3,6 @@ import os
 from functools import cached_property
 from typing import Optional
 
-import click
-
 from .components import Component
 from .lazy import Lazy, NotAvailable, evaluate
 from .local import run
@@ -167,13 +165,7 @@ class _TerraformComponent(Component):
         return {name: lazy_output(name) for name in self.props.output}
 
     def add_commands(self, cli):
-        @cli.command(
-            context_settings=dict(
-                ignore_unknown_options=True,
-                allow_interspersed_args=False,
-            )
-        )
-        @click.argument("args", nargs=-1, type=click.UNPROCESSED)
+        @cli.forward_command
         def terraform(args):
             self.run(*args, capture_output=False, exit=True)
 

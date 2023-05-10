@@ -244,8 +244,7 @@ class Mailu(Component):
         ]
 
     def add_commands(self, cli):
-        @cli.command(context_settings=dict(ignore_unknown_options=True))
-        @click.argument("args", nargs=-1, type=click.UNPROCESSED)
+        @cli.forward_command
         def compose(args):
             """Run `docker compose` with the given arguments"""
             self.directory.host.run(
@@ -254,8 +253,7 @@ class Mailu(Component):
                 exit=True,
             )
 
-        @cli.command(context_settings=dict(ignore_unknown_options=True))
-        @click.argument("args", nargs=-1, type=click.UNPROCESSED)
+        @cli.forward_command
         def run(args):
             """Run Mailu `admin` with the given arguments"""
             self.directory.host.run(

@@ -4,8 +4,6 @@ from copy import copy
 from pathlib import Path
 from typing import Optional, Union
 
-import click
-
 from .callbacks import Callbacks
 from .components import Component
 from .lazy import Lazy, evaluate
@@ -92,8 +90,7 @@ class BaseHost(Component):
         return rv
 
     def add_commands(self, cli):
-        @cli.command(context_settings=dict(ignore_unknown_options=True))
-        @click.argument("args", nargs=-1, type=click.UNPROCESSED)
+        @cli.forward_command
         def run(args):
             self.run(*args, capture_output=False, exit=True)
 

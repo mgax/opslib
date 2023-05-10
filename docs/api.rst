@@ -1,6 +1,9 @@
 API
 ===
 
+Core modules
+------------
+
 .. module:: opslib.components
 
 .. autoclass:: Component
@@ -54,6 +57,13 @@ API
 .. autofunction:: get_main_cli
 
 .. autofunction:: main
+
+.. autoclass:: ComponentGroup
+   :show-inheritance:
+   :members:
+
+Batteries
+---------
 
 .. module:: opslib.places
 

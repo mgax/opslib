@@ -1,10 +1,16 @@
+import click
 import pytest
-from click import echo
 from click.testing import CliRunner
 
 from opslib.cli import get_cli, get_main_cli
 from opslib.components import Component
 from opslib.results import Result
+
+
+def invoke_output(stack, *args):
+    cli = get_main_cli(lambda: stack)
+    result = CliRunner().invoke(cli, args, catch_exceptions=False)
+    return result.output
 
 
 @pytest.mark.parametrize(
@@ -76,9 +82,7 @@ def test_component_lookup(path, expected, stack):
 
 def test_main_cli(stack):
     stack.a = Component()
-    cli = get_main_cli(lambda: stack)
-    result = CliRunner().invoke(cli, ["a", "id"], catch_exceptions=False)
-    assert result.output == "<Component a>\n"
+    assert invoke_output(stack, "a", "id") == "<Component a>\n"
 
 
 def test_add_commands(stack):
@@ -86,12 +90,10 @@ def test_add_commands(stack):
         def add_commands(self, cli):
             @cli.command()
             def speak():
-                echo(f"Hello from {self!r}")
+                click.echo(f"Hello from {self!r}")
 
     stack.a = CommandingComponent()
-    cli = get_main_cli(lambda: stack)
-    result = CliRunner().invoke(cli, ["a", "speak"], catch_exceptions=False)
-    assert result.output == "Hello from <CommandingComponent a>\n"
+    assert invoke_output(stack, "a", "speak") == "Hello from <CommandingComponent a>\n"
 
 
 def test_ls(stack):
@@ -103,6 +105,28 @@ def test_ls(stack):
 
 
 def test_show_subcommands(stack):
-    cli = get_main_cli(lambda: stack)
-    result = CliRunner().invoke(cli, ["-", "--help"], catch_exceptions=False)
-    assert "Commands:" in result.output
+    assert "Commands:" in invoke_output(stack, "-", "--help")
+
+
+def test_forward_command(stack):
+    class MyCommand(Component):
+        def add_commands(self, cli):
+            @cli.forward_command
+            @click.argument("prefix")
+            def foo(prefix, args):
+                click.echo([prefix, args])
+
+    stack.my_command = MyCommand()
+    assert invoke_output(stack, "my_command", "foo", "a", "b") == "['a', ('b',)]\n"
+
+
+def test_forward_command_with_custom_name(stack):
+    class MyCommand(Component):
+        def add_commands(self, cli):
+            @cli.forward_command("bar")
+            @click.argument("prefix")
+            def foo(prefix, args):
+                click.echo([prefix, args])
+
+    stack.my_command = MyCommand()
+    assert invoke_output(stack, "my_command", "bar", "a", "b") == "['a', ('b',)]\n"

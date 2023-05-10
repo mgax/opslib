@@ -1,7 +1,5 @@
 from tempfile import TemporaryDirectory
 
-import click
-
 from opslib.components import Component
 from opslib.extras.restic import ResticRepository
 from opslib.extras.systemd import SystemdTimerService
@@ -99,8 +97,7 @@ class Backups(Component):
         run("b2", *args, extra_env=evaluate(self.env_vars), **kwargs)
 
     def add_commands(self, cli):
-        @cli.command(context_settings=dict(ignore_unknown_options=True))
-        @click.argument("args", nargs=-1, type=click.UNPROCESSED)
+        @cli.forward_command
         def b2(args):
             self.run_b2(*args, capture_output=False, exit=True)
 

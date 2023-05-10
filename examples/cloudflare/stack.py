@@ -5,7 +5,6 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Optional
 
-import click
 import yaml
 
 from opslib.components import Component, Stack
@@ -157,8 +156,7 @@ class App(Component):
         return yaml.dump(content, sort_keys=False)
 
     def add_commands(self, cli):
-        @cli.command(context_settings=dict(ignore_unknown_options=True))
-        @click.argument("args", nargs=-1, type=click.UNPROCESSED)
+        @cli.forward_command
         def compose(args):
             """Run `docker compose` with the given arguments"""
             self.directory.host.run(
