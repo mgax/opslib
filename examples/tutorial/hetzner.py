@@ -14,7 +14,7 @@ class VPS(Component):
         self.provider = TerraformProvider(
             name="hcloud",
             source="hetznercloud/hcloud",
-            version="~> 1.36.2",
+            version="~> 1.38.2",
         )
 
         self.ssh_key = self.provider.resource(
@@ -33,9 +33,7 @@ class VPS(Component):
                 server_type="cx11",
                 image="debian-11",
                 location="hel1",
-                ssh_keys=[
-                    self.ssh_key.output["id"],
-                ],
+                ssh_keys=[self.ssh_key.output["id"]],
             ),
             output=["ipv4_address"],
         )

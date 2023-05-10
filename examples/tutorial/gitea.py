@@ -1,15 +1,15 @@
-import click
-import yaml
+from collections.abc import Callable
+from typing import Optional
 
-from opslib.components import Component
-from opslib.places import Directory
-from opslib.props import Prop
+import yaml
+from opslib import Component, Directory, Prop, lazy_property
 
 
 class Gitea(Component):
     class Props:
         directory = Prop(Directory)
-        listen = Prop(str)
+        listen = Prop(Optional[str])
+        sidecar = Prop(Optional[Callable])
 
     def build(self):
         self.directory = self.props.directory
@@ -17,19 +17,16 @@ class Gitea(Component):
 
         self.compose_file = self.directory.file(
             name="docker-compose.yml",
-            content=self.compose_file_content,
+            content=self.compose_content,
         )
 
         self.compose_up = self.directory.host.command(
             args=[*self.compose_args, "up", "-d"],
+            run_after=[self.compose_file],
         )
 
-    @property
-    def compose_args(self):
-        return ["docker", "compose", "--project-directory", self.directory.path]
-
-    @property
-    def compose_file_content(self):
+    @lazy_property
+    def compose_content(self):
         content = dict(
             version="3",
             services=dict(
@@ -39,17 +36,26 @@ class Gitea(Component):
                         f"{self.data_volume.path}:/data",
                     ],
                     restart="unless-stopped",
-                    ports=[
-                        f"{self.props.listen}:3000",
-                    ],
                 ),
             ),
         )
+
+        if self.props.listen:
+            content["services"]["app"]["ports"] = [
+                f"{self.props.listen}:3000",
+            ]
+
+        if self.props.sidecar:
+            content["services"]["sidecar"] = self.props.sidecar("http://app:3000")
+
         return yaml.dump(content, sort_keys=False)
 
+    @property
+    def compose_args(self):
+        return ["docker", "compose", "--project-directory", self.directory.path]
+
     def add_commands(self, cli):
-        @cli.command(context_settings=dict(ignore_unknown_options=True))
-        @click.argument("args", nargs=-1, type=click.UNPROCESSED)
+        @cli.forward_command
         def compose(args):
             """Run `docker compose` with the given arguments"""
             self.directory.host.run(
