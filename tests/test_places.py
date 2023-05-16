@@ -147,6 +147,16 @@ def test_command_cli_run(tmp_path, local_host, stack):
     assert path.is_file()
 
 
+def test_command_localhost_cwd(tmp_path, local_host, stack):
+    stack.directory = local_host.directory(tmp_path / "here")
+    stack.foo = stack.directory.command(
+        args=["pwd"],
+    )
+    apply(stack, deploy=True)
+
+    assert stack.foo.run().output.strip() == str(tmp_path / "here")
+
+
 def test_file_content_diff(tmp_path, local_host, capsys, stack):
     foo_path = tmp_path / "foo.txt"
     with foo_path.open("w") as f:

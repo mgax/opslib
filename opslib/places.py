@@ -1,4 +1,5 @@
 import os
+import shlex
 import sys
 from copy import copy
 from pathlib import Path
@@ -202,6 +203,13 @@ class SshHost(BaseHost):
 
         ssh_args.append("--")
 
+        cwd = kwargs.pop("cwd", None)
+        if cwd is not None:
+            cwd = str(cwd)
+            if cwd != shlex.quote(cwd):
+                raise ValueError("CWD must not contain special characters")
+            ssh_args += ["cd", cwd, "&&"]
+
         if self.with_sudo:
             ssh_args.append("sudo")
             if not args:
@@ -357,6 +365,19 @@ class Directory(Component):
             **kwargs,
         )
 
+    def command(self, **props):
+        """
+        Shorthand function that returns a :class:`Command` component with
+        ``cwd`` set to this directory and ``host`` set to this host. Keyword
+        arguments are forwarded as props to the Command.
+        """
+
+        return Command(
+            host=self.host,
+            cwd=self.path,
+            **props,
+        )
+
 
 class Command(Component):
     """
@@ -364,6 +385,7 @@ class Command(Component):
     host during deployment.
 
     :param host: The parent host.
+    :param cwd: Optional :class:`~pathlib.Path` where command should run.
     :param args: Command arguments array. The first argument is the command
                  itself. Defaults to ``[]``, which invokes the shell, useful
                  with the ``input`` parameter.
@@ -376,6 +398,7 @@ class Command(Component):
 
     class Props:
         host = Prop(BaseHost)
+        cwd = Prop(Optional[Path])
         args = Prop(Union[list, tuple], default=[])
         input = Prop(Optional[str])
         run_after = Prop(list, default=[])
@@ -400,6 +423,7 @@ class Command(Component):
 
         return self.host.run(
             *self.props.args,
+            cwd=self.props.cwd,
             input=self.props.input,
             **kwargs,
         )
