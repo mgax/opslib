@@ -378,6 +378,16 @@ class Directory(Component):
             **props,
         )
 
+    def run(self, *args, **kwargs):
+        """
+        Run a command inside this directory. If ``args`` is empty, it defaults
+        to a single argument, ``$SHELL``.
+
+        It invokes :func:`~opslib.local.run` with the arguments.
+        """
+
+        return self.host.run(cwd=self.path, *args, **kwargs)
+
 
 class Command(Component):
     """

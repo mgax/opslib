@@ -79,7 +79,7 @@ Batteries
    :members:
 
 .. autoclass:: Directory
-   :members: subdir, __truediv__, file
+   :members: subdir, __truediv__, file, command, run
 
 .. autoclass:: File
 

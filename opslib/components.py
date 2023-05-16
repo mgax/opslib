@@ -86,8 +86,8 @@ class Component:
         Called when the CLI is constructed. Override this method to add custom
         commands.
 
-        :param cli: A :class:`click.Group` that represents the CLI of this
-                    component.
+        :param cli: A :class:`~opslib.cli.ComponentGroup` that represents the
+                    CLI of this component.
         """
 
 
