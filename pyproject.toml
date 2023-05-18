@@ -3,7 +3,7 @@ profile = "black"
 
 [tool.poetry]
 name = "pyopslib"
-version = "0.0.3"
+version = "0.1"
 description = "A Pythonic toolkit to manage infrastructure."
 authors = ["Alex Morega <alex@grep.ro>"]
 license = "MIT"
