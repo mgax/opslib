@@ -4,6 +4,7 @@ from functools import cached_property
 from pathlib import Path
 
 from .props import InstanceProps
+from .results import Result
 from .state import StateDirectory
 
 logger = logging.getLogger(__name__)
@@ -89,6 +90,26 @@ class Component:
         :param cli: A :class:`~opslib.cli.ComponentGroup` that represents the
                     CLI of this component.
         """
+
+    def _check(self):
+        from opslib.operations import Printer
+
+        for name in dir(self):
+            if not name.startswith("check_"):
+                continue
+            value = getattr(self, name)
+            if callable(value):
+                printer = Printer(self, f"::{name}")
+                printer.print_component(wip=True)
+                try:
+                    value()
+                    result = Result()
+                except Exception as e:
+                    result = Result(failed=True, output=str(e))
+                printer.print_result(result)
+
+        for child in self:
+            child._check()
 
 
 def get_stateroot(import_name):

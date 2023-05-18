@@ -53,9 +53,9 @@ class Operation:
 
 
 class Printer:
-    def __init__(self, component):
+    def __init__(self, component, suffix=""):
         self.component = component
-        self.component_str = str(self.component)
+        self.component_str = str(self.component) + suffix
         self.component_type_str = type(self.component).__name__
 
     def print_component(self, wip=False, failed=False, changed=False):

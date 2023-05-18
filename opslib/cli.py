@@ -140,6 +140,10 @@ def get_cli(component):
         destroy=True,
     )
 
+    @cli.command()
+    def check():
+        component._check()
+
     component.add_commands(cli)
 
     return cli

@@ -53,6 +53,8 @@ class SystemdUnit(Component):
         @click.argument("command")
         def systemctl(command, args):
             self.props.host.run(
+                "env",
+                "SYSTEMD_COLORS=1",
                 "systemctl",
                 command,
                 self.props.name,
