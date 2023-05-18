@@ -1,5 +1,7 @@
 # Opslib
 
+[![Discord](https://badgen.net/badge/icon/discord?icon=discord&label)](https://discord.gg/TbaFKfusS6)
+
 Opslib is a Python infrastructure-as-code framework which offers powerful abstractions to make deployment straightforward and fun.
 
 ### Installing
@@ -93,3 +95,4 @@ Opslib does its best to enable readable code so you can reason about your stack.
 
 * Documentation: https://pyopslib.readthedocs.io
 * Examples: https://github.com/mgax/opslib/tree/main/examples
+* Discord: https://discord.gg/TbaFKfusS6
