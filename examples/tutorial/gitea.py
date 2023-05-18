@@ -13,15 +13,12 @@ class Gitea(Component):
 
     def build(self):
         self.directory = self.props.directory
-        self.data_volume = self.directory / "data"
-
         self.compose_file = self.directory.file(
             name="docker-compose.yml",
             content=self.compose_content,
         )
-
-        self.compose_up = self.directory.host.command(
-            args=[*self.compose_args, "up", "-d"],
+        self.compose_up = self.directory.command(
+            args=["docker", "compose", "up", "-d"],
             run_after=[self.compose_file],
         )
 
@@ -33,7 +30,7 @@ class Gitea(Component):
                 app=dict(
                     image="gitea/gitea:1.19.0",
                     volumes=[
-                        f"{self.data_volume.path}:/data",
+                        "./data:/data",
                     ],
                     restart="unless-stopped",
                 ),
@@ -50,16 +47,9 @@ class Gitea(Component):
 
         return yaml.dump(content, sort_keys=False)
 
-    @property
-    def compose_args(self):
-        return ["docker", "compose", "--project-directory", self.directory.path]
-
     def add_commands(self, cli):
         @cli.forward_command
         def compose(args):
             """Run `docker compose` with the given arguments"""
-            self.directory.host.run(
-                *[*self.compose_args, *args],
-                capture_output=False,
-                exit=True,
-            )
+            cmd = ["docker", "compose", *args]
+            self.directory.run(*cmd, capture_output=False, exit=True)

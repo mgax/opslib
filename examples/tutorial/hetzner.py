@@ -1,8 +1,6 @@
 from pathlib import Path
 
-from opslib.components import Component
-from opslib.places import SshHost
-from opslib.props import Prop
+from opslib import Component, Prop, SshHost
 from opslib.terraform import TerraformProvider
 
 

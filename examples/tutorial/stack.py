@@ -12,8 +12,7 @@ class Local(Component):
     def build(self):
         self.host = LocalHost()
         self.directory = self.host.directory(Path(__file__).parent / "target")
-
-        self.app = Gitea(
+        self.gitea = Gitea(
             directory=self.directory / "gitea",
             listen="127.0.0.1:3000",
         )
@@ -26,12 +25,11 @@ class Cloud(Component):
             record_name=os.environ.get("CLOUDFLARE_RECORD_NAME", "example-gitea"),
             tunnel_secret=os.environ["CLOUDFLARE_TUNNEL_SECRET"],
         )
-
-        self.vps = VPS(name="mycodeforge")
-        self.directory = self.vps.host.directory("/opt/opslib")
-
-        self.app = Gitea(
-            directory=self.directory / "gitea",
+        self.vps = VPS(
+            name="opslib-tutorial",
+        )
+        self.gitea = Gitea(
+            directory=self.vps.host.directory("/opt/gitea"),
             sidecar=self.cloudflare.sidecar,
         )
 
