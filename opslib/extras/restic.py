@@ -1,5 +1,8 @@
 from io import StringIO
+from pathlib import Path
 from shlex import quote
+
+from beartype.typing import List
 
 from opslib.components import Component
 from opslib.lazy import Lazy, evaluate, lazy_property
@@ -19,6 +22,7 @@ class ResticRepository(Component):
         repository = Prop(str)
         password = Prop(str, lazy=True)
         env = Prop(dict, default={}, lazy=True)
+        restic_binary = Prop(str, default="restic")
 
     state = JsonState()
 
@@ -59,7 +63,7 @@ class ResticRepository(Component):
         )
 
     def run(self, *args, **kwargs):
-        return run("restic", *args, **kwargs, extra_env=self.extra_env)
+        return run(self.props.restic_binary, *args, **kwargs, extra_env=self.extra_env)
 
     @property
     def initialized(self):
@@ -78,8 +82,8 @@ class ResticPlan(Component):
     class Props:
         repository = Prop(ResticRepository)
         precommands = Prop(list, default=[])
-        paths = Prop(list, default=[], lazy=True)
-        exclude = Prop(list, default=[], lazy=True)
+        paths = Prop(List[Path], default=[], lazy=True)
+        exclude = Prop(List[Path], default=[], lazy=True)
         preamble = Prop(str, default=BASH_PREAMBLE)
 
     @lazy_property
@@ -93,7 +97,7 @@ class ResticPlan(Component):
         for key, value in self.props.repository.extra_env.items():
             out.write(f"export {key}={quote(value)}\n")
 
-        cmd = ["exec", "restic", "backup"]
+        cmd = ["exec", self.props.repository.props.restic_binary, "backup"]
         cmd += [quote(str(path)) for path in evaluate(self.props.paths)]
         cmd += [
             f"--exclude={quote(str(path))}" for path in evaluate(self.props.exclude)
