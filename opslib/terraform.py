@@ -3,6 +3,8 @@ import os
 from functools import cached_property
 from typing import Optional
 
+import click
+
 from .components import Component
 from .lazy import Lazy, NotAvailable, evaluate
 from .local import run
@@ -110,6 +112,10 @@ class _TerraformComponent(Component):
         args = Prop(dict, default={}, lazy=True)
         output = Prop(Optional[list])
 
+    @property
+    def address(self):
+        return f"{self.props.type}.thing"
+
     @cached_property
     def tf_path(self):
         return self._meta.statedir.path / "terraform"
@@ -205,7 +211,7 @@ class TerraformResource(_TerraformComponent):
         if self.props.output:
             config["output"] = {
                 key: {
-                    "value": f"${{{self.props.type}.thing.{key}}}",
+                    "value": f"${{{self.address}.{key}}}",
                     "sensitive": True,
                 }
                 for key in self.props.output
@@ -232,12 +238,24 @@ class TerraformResource(_TerraformComponent):
     def destroy(self, dry_run=False):
         return self._apply(dry_run=dry_run, destroy=True)
 
-    def import_resource(self, resource_id):
+    def import_resource(self, resource_id, **kwargs):
         """
         Import an existing resource into Terraform.
         """
 
-        return self.run("import", f"{self.props.type}.thing", evaluate(resource_id))
+        return self.run("import", self.address, evaluate(resource_id), **kwargs)
+
+    def add_commands(self, cli):
+        super().add_commands(cli)
+
+        @cli.command("import")
+        @click.argument("resource_id")
+        def import_(resource_id):
+            self.import_resource(resource_id, capture_output=False, exit=True)
+
+        @cli.command
+        def forget():
+            self.run("state", "rm", self.address)
 
 
 class TerraformDataSource(_TerraformComponent):
@@ -275,7 +293,7 @@ class TerraformDataSource(_TerraformComponent):
         if self.props.output:
             config["output"] = {
                 key: {
-                    "value": f"${{data.{self.props.type}.thing.{key}}}",
+                    "value": f"${{data.{self.address}.{key}}}",
                     "sensitive": True,
                 }
                 for key in self.props.output
