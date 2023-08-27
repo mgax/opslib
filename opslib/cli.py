@@ -114,9 +114,10 @@ def get_cli(component):
         target_cli(obj=ctx.obj, args=args)
 
     def register_apply_command(name, *decorators, **defaults):
+        @click.option("--pdb", "use_pdb", is_flag=True)
         @click.pass_context
-        def command(ctx, **kwargs):
-            results = apply(component, **defaults, **kwargs)
+        def command(ctx, use_pdb, **kwargs):
+            results = apply(component, use_pdb=use_pdb, **defaults, **kwargs)
             print_report(results)
 
         for decorator in decorators:

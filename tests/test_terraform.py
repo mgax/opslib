@@ -84,7 +84,9 @@ def test_refresh(local_stack, different):
 def test_cli(local_stack, capfd):
     cli = get_main_cli(local_stack)
     capfd.readouterr()
-    CliRunner().invoke(cli, ["file", "terraform", "plan"], catch_exceptions=False)
+    CliRunner().invoke(
+        cli, ["file", "terraform", "plan"], obj={}, catch_exceptions=False
+    )
     captured = capfd.readouterr()
     assert "Terraform will perform the following actions:" in captured.out
 

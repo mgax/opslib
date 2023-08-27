@@ -1,4 +1,5 @@
 import logging
+import pdb
 import sys
 from collections import defaultdict
 
@@ -97,9 +98,10 @@ class Printer:
 
 
 class Runner:
-    def __init__(self, component):
+    def __init__(self, component, use_pdb=False):
         self.component = component
         self.printer = Printer(component)
+        self.use_pdb = use_pdb
 
     def run(self, func, *args, **kwargs):
         self.printer.print_component(wip=True)
@@ -126,6 +128,11 @@ class Runner:
             if isinstance(error, OperationError):
                 logger.warning("Run failed on %s: %r", self.component, error)
 
+                if self.use_pdb:
+                    logger.exception("Command failed")
+                    pdb.post_mortem()
+                    sys.exit(1)
+
                 try:
                     self.printer.print_result(error.result)
 
@@ -135,13 +142,13 @@ class Runner:
                     )
 
                 echo(style("Operation failed!", fg="red"), file=sys.stderr)
-                raise AbortOperation()
+                raise AbortOperation() from error
 
             raise
 
 
-def iter_apply(component, op):
-    runner = Runner(component)
+def iter_apply(component, op, use_pdb):
+    runner = Runner(component, use_pdb)
 
     logger.debug("Applying %r to %r", op, component)
 
@@ -155,7 +162,7 @@ def iter_apply(component, op):
         children.reverse()
 
     for child in children:
-        yield from iter_apply(child, op)
+        yield from iter_apply(child, op, use_pdb)
 
     if op.refresh:
         assert not op.dry_run
@@ -167,7 +174,7 @@ def iter_apply(component, op):
             yield component, runner.run(component.deploy, dry_run=op.dry_run)
 
 
-def apply(component, **kwargs):
+def apply(component, use_pdb=False, **kwargs):
     """
     Apply the specified operation on ``component``. It will also be applied
     recursively, depth-first, to all child components.
@@ -181,7 +188,7 @@ def apply(component, **kwargs):
     """
 
     op = Operation(**kwargs)
-    return dict(iter_apply(component, op))
+    return dict(iter_apply(component, op, use_pdb))
 
 
 def print_report(results):
