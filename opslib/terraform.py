@@ -128,6 +128,7 @@ class _TerraformComponent(Component):
         extra_env = {"TF_IN_AUTOMATION": "true"}
         provider = self.props.provider
         if provider and not os.environ.get("TF_PLUGIN_CACHE_DIR"):
+            provider.plugin_cache_path.mkdir(exist_ok=True)
             extra_env["TF_PLUGIN_CACHE_DIR"] = str(provider.plugin_cache_path)
 
         return run("terraform", *args, **kwargs, cwd=self.tf_path, extra_env=extra_env)
