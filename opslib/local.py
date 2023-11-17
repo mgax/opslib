@@ -45,6 +45,7 @@ def run(
     encoding="utf8",
     extra_env=None,
     exit=False,
+    exit_on_error=False,
     check=True,
     exec=False,
     **kwargs,
@@ -96,6 +97,9 @@ def run(
     )
 
     if exit:
+        sys.exit(completed.returncode)
+
+    if exit_on_error and completed.returncode:
         sys.exit(completed.returncode)
 
     result = LocalRunResult(completed, encoding=encoding)
