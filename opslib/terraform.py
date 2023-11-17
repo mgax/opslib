@@ -13,6 +13,10 @@ from .results import Result
 from .uptodate import UpToDate
 
 
+def lazy_quote(value):
+    return Lazy(lambda: evaluate(value).replace("${", "$${"))
+
+
 class TerraformResult(Result):
     """
     The result of an invocation of ``terraform``. In addition to the fields
