@@ -98,10 +98,11 @@ class Printer:
 
 
 class Runner:
-    def __init__(self, component, use_pdb=False):
+    def __init__(self, component, use_pdb=False, debug=False):
         self.component = component
         self.printer = Printer(component)
         self.use_pdb = use_pdb
+        self.debug = debug
 
     def run(self, func, *args, **kwargs):
         self.printer.print_component(wip=True)
@@ -119,14 +120,17 @@ class Runner:
             self.printer.print_result(result, overwrite=overwrite)
             return result
 
-        except NotAvailable as error:
-            result = Result(failed=True, output=error.args[0])
-            self.printer.print_result(result)
-            return result
+        except BaseException as exception:
+            if self.debug:
+                raise RuntimeError from exception
 
-        except Exception as error:
-            if isinstance(error, OperationError):
-                logger.warning("Run failed on %s: %r", self.component, error)
+            if isinstance(exception, NotAvailable):
+                result = Result(failed=True, output=exception.args[0])
+                self.printer.print_result(result)
+                return result
+
+            if isinstance(exception, OperationError):
+                logger.warning("Run failed on %s: %r", self.component, exception)
 
                 if self.use_pdb:
                     logger.exception("Command failed")
@@ -134,7 +138,7 @@ class Runner:
                     sys.exit(1)
 
                 try:
-                    self.printer.print_result(error.result)
+                    self.printer.print_result(exception.result)
 
                 except Exception:
                     logger.exception(
@@ -142,7 +146,7 @@ class Runner:
                     )
 
                 echo(style("Operation failed!", fg="red"), file=sys.stderr)
-                raise AbortOperation() from error
+                raise AbortOperation from exception
 
             raise
 

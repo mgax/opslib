@@ -87,7 +87,7 @@ class ComponentGroup(click.Group):
         return decorator
 
 
-def get_cli(component):
+def get_cli(component) -> click.Group:
     @click.group(cls=ComponentGroup)
     def cli():
         pass
@@ -150,9 +150,9 @@ def get_cli(component):
     return cli
 
 
-def get_main_cli(get_stack):
+def get_main_cli(get_stack) -> click.Command:
     """
-    Create a :class:`click.Group` for the given stack.
+    Create a :class:`click.Command` for the given stack.
 
     :param get_stack: Callable that returns a :class:`~opslib.components.Stack`.
     """
@@ -181,11 +181,14 @@ def get_main_cli(get_stack):
     @click.option("-d", "--debug", is_flag=True)
     @click.option("--pdb", "use_pdb", is_flag=True)
     @click.argument("args", nargs=-1, type=click.UNPROCESSED, shell_complete=complete)
-    def cli(debug, use_pdb, args):
+    @click.pass_context
+    def cli(ctx: click.Context, debug, use_pdb, args):
         logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
+        ctx.obj["debug"] = debug
+
         try:
             stack = get_stack()
-            return get_cli(stack)(args=["component", *args])
+            return get_cli(stack)(obj=ctx.obj, args=["component", *args])
 
         except Exception:
             if use_pdb:
@@ -215,4 +218,4 @@ def main():
     """
 
     cli = get_main_cli(get_stack)
-    cli()
+    cli(obj={})

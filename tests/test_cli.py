@@ -9,7 +9,7 @@ from opslib.results import Result
 
 def invoke_output(stack, *args):
     cli = get_main_cli(lambda: stack)
-    result = CliRunner().invoke(cli, args, catch_exceptions=False)
+    result = CliRunner().invoke(cli, args, obj={}, catch_exceptions=False)
     return result.output
 
 
@@ -100,7 +100,7 @@ def test_ls(stack):
     stack.a = Component()
     stack.b = Component()
     cli = get_main_cli(lambda: stack)
-    result = CliRunner().invoke(cli, ["-", "ls"], catch_exceptions=False)
+    result = CliRunner().invoke(cli, ["-", "ls"], obj={}, catch_exceptions=False)
     assert result.output == "a: <Component a>\nb: <Component b>\n"
 
 
