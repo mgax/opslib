@@ -3,7 +3,7 @@ import shlex
 import sys
 from copy import copy
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union, cast
 
 from .callbacks import Callbacks
 from .components import Component
@@ -306,13 +306,18 @@ class Directory(Component):
         owner = Prop(Optional[str])
         group = Prop(Optional[str])
 
+    def replace(self, **kwargs):
+        props = vars(self.props)
+        props.update(kwargs)
+        return type(self)(**props)
+
     @property
     def host(self):
         return self.props.host
 
     @property
     def path(self):
-        return self.props.path
+        return cast(Path, self.props.path)
 
     def build(self):
         args = dict(
