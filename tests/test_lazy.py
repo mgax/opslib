@@ -1,6 +1,4 @@
-import pytest
-
-from opslib.lazy import Lazy, evaluate, is_lazy, lazy_property
+from opslib.lazy import Lazy, evaluate, lazy_property
 
 
 def func(*args, **kwargs):
@@ -62,15 +60,3 @@ def test_lazy_property():
     evaluate(bench.foo)
     evaluate(bench.foo)
     assert bench.called == 1
-
-
-@pytest.mark.parametrize(
-    "value,expect",
-    [
-        (None, False),
-        (13, False),
-        (Lazy(str), True),
-    ],
-)
-def test_is_lazy(value, expect):
-    assert is_lazy(value) == expect

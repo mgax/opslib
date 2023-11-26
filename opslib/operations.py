@@ -5,7 +5,7 @@ from collections import defaultdict
 
 from click import echo, style
 
-from .lazy import NotAvailable, evaluate, is_lazy
+from .lazy import Lazy, NotAvailable, evaluate
 from .results import OperationError, Result
 
 logger = logging.getLogger(__name__)
@@ -110,7 +110,7 @@ class Runner:
         try:
             result = func(*args, **kwargs)
 
-            if is_lazy(result):
+            if isinstance(result, Lazy):
                 overwrite = False
                 result = evaluate(result)
 

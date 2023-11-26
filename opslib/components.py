@@ -2,8 +2,9 @@ import logging
 import sys
 from functools import cached_property
 from pathlib import Path
+from typing import Any, Type, TypeVar
 
-from .props import InstanceProps
+from .props import get_instance_props
 from .results import Result
 from .state import StateDirectory
 
@@ -42,10 +43,12 @@ class Component:
     Meta = Meta
 
     _meta = None
+    _props_dataclass: Any = None
+    props: Any
 
     def __init__(self, **kwargs):
         self._children = {}
-        self.props = InstanceProps(self, kwargs)
+        self.props = get_instance_props(self, kwargs)
 
     def __str__(self):
         return self._meta.full_name if self._meta else "[detached]"
@@ -112,8 +115,28 @@ class Component:
             child._check()
 
 
+PropsType = TypeVar("PropsType")
+
+
+class _TypedComponent[PropsType](Component):
+    props: PropsType
+
+
+def TypedComponent(
+    props_dataclass: PropsType = None,
+) -> Type[_TypedComponent[PropsType]]:
+    class Implementation(_TypedComponent):
+        pass
+
+    if props_dataclass:
+        Implementation._props_dataclass = props_dataclass
+
+    return Implementation
+
+
 def get_stateroot(import_name):
     module = sys.modules[import_name]
+    assert module.__file__
     return Path(module.__file__).parent / ".opslib"
 
 

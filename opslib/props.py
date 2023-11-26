@@ -42,6 +42,43 @@ class Prop:
         return Lazy(get_value_and_check)
 
 
+def get_instance_props(instance, kwargs):
+    if instance._props_dataclass:
+        return instance._props_dataclass(**kwargs)
+
+    props = {}
+
+    for name, prop in instance.Props.__dict__.items():
+        if prop is Prop.remainder:
+            props[name] = kwargs
+            kwargs = {}
+            break
+
+        if not isinstance(prop, Prop):
+            continue
+
+        value = kwargs.pop(name, prop.default)
+        if prop.lazy and isinstance(value, Lazy):
+            value = prop.wrap_lazy(instance, name, value)
+
+        else:
+            if value is NO_DEFAULT:
+                if not beartype.door.is_bearable(None, prop.type):
+                    raise TypeError(f"Required prop {name!r} is missing")
+
+                value = None
+
+            elif not beartype.door.is_bearable(value, prop.type):
+                raise TypeError(f"Prop {name!r}: {value!r} is not {prop.type!r}")
+
+        props[name] = value
+
+    for name in kwargs:
+        raise TypeError(f"{name!r} is an invalid prop for {instance!r}")
+
+    return InstanceProps(**props)
+
+
 class InstanceProps:
     """
     The InstanceProps class is a container for instance props (see
@@ -50,33 +87,9 @@ class InstanceProps:
     are attributes of this object.
     """
 
-    def __init__(self, instance, kwargs):
-        for name, prop in instance.Props.__dict__.items():
-            if prop is Prop.remainder:
-                setattr(self, name, kwargs)
-                return
-
-            if not isinstance(prop, Prop):
-                continue
-
-            value = kwargs.pop(name, prop.default)
-            if prop.lazy and isinstance(value, Lazy):
-                value = prop.wrap_lazy(instance, name, value)
-
-            else:
-                if value is NO_DEFAULT:
-                    if not beartype.door.is_bearable(None, prop.type):
-                        raise TypeError(f"Required prop {name!r} is missing")
-
-                    value = None
-
-                elif not beartype.door.is_bearable(value, prop.type):
-                    raise TypeError(f"Prop {name!r}: {value!r} is not {prop.type!r}")
-
+    def __init__(self, **kwargs):
+        for name, value in kwargs.items():
             setattr(self, name, value)
-
-        for name in kwargs:
-            raise TypeError(f"{name!r} is an invalid prop for {instance!r}")
 
     def __repr__(self):
         return f"<{type(self).__name__}: {vars(self)}>"

@@ -3,10 +3,12 @@ from typing import Optional
 import pytest
 
 from opslib.lazy import Lazy, evaluate
-from opslib.props import InstanceProps, Prop
+from opslib.props import Prop, get_instance_props
 
 
 class Bench:
+    _props_dataclass = None
+
     class Props:
         name = Prop(str)
         color = Prop(str, default="black")
@@ -14,7 +16,7 @@ class Bench:
         material = Prop(str, default="", lazy=True)
 
     def __init__(self, **kwargs):
-        self.props = InstanceProps(type(self), kwargs)
+        self.props = get_instance_props(self, kwargs)
 
 
 def test_value():
@@ -50,9 +52,9 @@ def test_unexpected():
     with pytest.raises(TypeError) as error:
         Bench(name="bar", surprise="boom")
 
-    assert error.value.args == (
-        "'surprise' is an invalid prop for <class 'test_props.Bench'>",
-    )
+    assert (
+        "'surprise' is an invalid prop for <test_props.Bench object "
+    ) in error.value.args[0]
 
 
 def test_lazy_property():
@@ -70,20 +72,21 @@ def test_lazy_property_wrong_type():
     with pytest.raises(TypeError) as error:
         evaluate(bench.props.material)
 
-    assert error.value.args == (
-        "Lazy prop 'material' for <class 'test_props.Bench'>: 13 is not <class 'str'>",
-    )
+    assert "Lazy prop 'material' for <test_props.Bench object " in error.value.args[0]
+    assert "13 is not <class 'str'>" in error.value.args[0]
 
 
 def test_remainder():
     class Bench:
+        _props_dataclass = None
+
         class Props:
             a = Prop(int)
             b = Prop(int)
             z = Prop.remainder
 
         def __init__(self, **kwargs):
-            self.props = InstanceProps(type(self), kwargs)
+            self.props = get_instance_props(type(self), kwargs)
 
     bench = Bench(a=1, b=2, c=3, d=4)
     assert bench.props.a == 1

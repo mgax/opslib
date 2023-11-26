@@ -1,4 +1,5 @@
 from functools import cached_property, wraps
+from typing import TypeVar
 
 
 class NotAvailable(KeyError):
@@ -8,7 +9,10 @@ class NotAvailable(KeyError):
     """
 
 
-class Lazy:
+T = TypeVar("T")
+
+
+class Lazy[T]:
     """
     A Lazy object wraps a value that will be available at a later time.
 
@@ -22,7 +26,7 @@ class Lazy:
         self.kwargs = kwargs
 
     @cached_property
-    def value(self):
+    def value(self) -> T:
         """
         When ``value`` is retrieved, the Lazy object evaluates itself and
         returns the result.
@@ -31,25 +35,24 @@ class Lazy:
         return self.func(*self.args, **self.kwargs)
 
 
-def is_lazy(ob):
-    return isinstance(ob, Lazy)
+MaybeLazy = Lazy[T] | T
 
 
-def evaluate(ob):
+def evaluate(ob: MaybeLazy[T]) -> T:
     """
     Evaluate :class:`Lazy` objects and return the result. If invoked with a
     non-*Lazy* argument, it traverses nested lists and dictionaries, making
     copies of them, and evaluating any *Lazy* values inside.
     """
 
-    if is_lazy(ob):
+    if isinstance(ob, Lazy):
         return ob.value
 
     if isinstance(ob, dict):
-        return {k: evaluate(v) for k, v in ob.items()}
+        return {k: evaluate(v) for k, v in ob.items()}  # type: ignore
 
     if isinstance(ob, list):
-        return [evaluate(i) for i in ob]
+        return [evaluate(i) for i in ob]  # type: ignore
 
     return ob
 
