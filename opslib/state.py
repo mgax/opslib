@@ -1,5 +1,6 @@
 import json
 import logging
+import shutil
 
 logger = logging.getLogger(__name__)
 
@@ -84,3 +85,28 @@ class ComponentJsonState:
 class JsonState:
     def __get__(self, obj, objtype=None):
         return ComponentJsonState(obj)
+
+
+def run_gc(component, dry_run=False):
+    child_names = {child._meta.name for child in component}
+    statedir_prefix = component._meta.statedir.prefix
+
+    def unexpected(item):
+        if item.name.startswith("_"):
+            return False
+
+        if not item.is_dir():
+            return False
+
+        return item.name not in child_names
+
+    for item in statedir_prefix.iterdir():
+        if unexpected(item):
+            print(item)
+            if dry_run:
+                continue
+
+            shutil.rmtree(item)
+
+    for child in component:
+        run_gc(child, dry_run=dry_run)

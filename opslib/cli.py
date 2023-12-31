@@ -8,6 +8,7 @@ import sys
 import click
 
 from .operations import apply, print_report
+from .state import run_gc
 
 logger = logging.getLogger(__name__)
 
@@ -104,6 +105,11 @@ def get_cli(component) -> click.Group:
     @cli.command()
     def shell():
         return interact(str(component), dict(self=component))
+
+    @cli.command()
+    @click.option("-n", "--dry-run", is_flag=True)
+    def gc(dry_run):
+        run_gc(component, dry_run=dry_run)
 
     @cli.forward_command("component")
     @click.pass_context
