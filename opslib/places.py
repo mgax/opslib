@@ -127,6 +127,10 @@ class LocalHost(BaseHost):
         if not args:
             shell = os.environ.get("SHELL", "sh")
             args = [shell]
+
+        if self.with_sudo:
+            args = ["sudo", *args]
+
         return run(*args, **kwargs)
 
 
@@ -183,7 +187,7 @@ class SshHost(BaseHost):
     def hostname(self):
         return self.props.hostname
 
-    def run(self, *args, **kwargs):
+    def run(self, *args, ssh_tty=False, **kwargs):
         """
         Run a command on the remote host.
 
@@ -204,6 +208,9 @@ class SshHost(BaseHost):
 
         if self.props.config_file:
             ssh_args += ["-F", str(self.props.config_file)]
+
+        if ssh_tty:
+            ssh_args += ["-t"]
 
         ssh_args.append("--")
 
