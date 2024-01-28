@@ -26,11 +26,9 @@ Approve the ``.envrc`` file::
 
     direnv allow
 
-Install dependencies::
+Install the package in edit mode::
 
-    pip install -U setuptools pip
-    pip install poetry
-    poetry install
+    pip install -e .'[dev]'
 
 Run the test suite::
 
