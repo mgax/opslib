@@ -8,7 +8,7 @@ from typing import Optional, Union, cast
 from .callbacks import Callbacks
 from .components import Component
 from .lazy import Lazy, evaluate
-from .local import run
+from .local import LocalRunResult, run
 from .props import Prop
 from .results import Result
 from .state import JsonState
@@ -21,6 +21,7 @@ class BaseHost(Component):
     """
 
     with_sudo = False
+    ansible_variables: list
 
     def file(self, **props):
         """
@@ -89,6 +90,9 @@ class BaseHost(Component):
             ("ansible_become_user", "root"),
         ]
         return rv
+
+    def run(self, *args, **kwargs) -> LocalRunResult:
+        ...
 
     def add_commands(self, cli):
         @cli.forward_command

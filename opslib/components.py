@@ -42,7 +42,7 @@ class Component:
 
     Meta = Meta
 
-    _meta = None
+    _meta: Meta = None  # type: ignore
     _props_dataclass: Any = None
     props: Any
 
