@@ -91,8 +91,7 @@ class BaseHost(Component):
         ]
         return rv
 
-    def run(self, *args, **kwargs) -> LocalRunResult:
-        ...
+    def run(self, *args, **kwargs) -> LocalRunResult: ...
 
     def add_commands(self, cli):
         @cli.forward_command
