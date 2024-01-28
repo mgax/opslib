@@ -16,9 +16,8 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -qq restic
           sudo restic self-update
-          pip install poetry
-          poetry install
+          pip install -e .'[dev]'
 
       - name: Testsuite
         run: |
-          poetry run pytest --runslow -vv --color=yes
+          pytest --runslow -vv --color=yes
