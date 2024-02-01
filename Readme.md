@@ -4,6 +4,8 @@
 
 Opslib is a Python infrastructure-as-code framework which offers powerful abstractions to make deployment straightforward and fun.
 
+Check out [opslib-contrib](https://github.com/mgax/opslib-contrib) for ready-made integrations with various tools and technologies.
+
 ### Installing
 
 ```shell
