@@ -117,7 +117,7 @@ def run(
 
 class Call(Component):
     class Props:
-        func = Prop(Callable, lazy=True)
+        func = Prop(Callable)
         run_after = Prop(list, default=[])
 
     state = JsonState()
@@ -130,8 +130,8 @@ class Call(Component):
     def _set_must_run(self):
         self.state["must-run"] = True
 
-    def call(self, **kwargs):
-        return self.props.func()
+    def call(self, *args, **kwargs):
+        return self.props.func(*args, **kwargs)
 
     def build(self):
         for other in self.props.run_after:
