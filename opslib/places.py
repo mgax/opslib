@@ -424,7 +424,7 @@ class Command(Component):
     class Props:
         host = Prop(BaseHost)
         cwd = Prop(Optional[Path])
-        args = Prop(Union[list, tuple], default=[])
+        args = Prop(Union[list, tuple], default=[], lazy=True)
         input = Prop(Optional[str])
         run_after = Prop(list, default=[])
 
@@ -447,7 +447,7 @@ class Command(Component):
         """
 
         return self.host.run(
-            *self.props.args,
+            *evaluate(self.props.args),
             cwd=self.props.cwd,
             input=self.props.input,
             **kwargs,
