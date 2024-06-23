@@ -2,8 +2,14 @@ import logging
 import os
 import subprocess
 import sys
+from collections.abc import Callable
 
+from .callbacks import Callbacks
+from .components import Component
+from .lazy import Lazy, evaluate
+from .props import Prop
 from .results import Result
+from .state import JsonState
 
 logger = logging.getLogger(__name__)
 
@@ -107,3 +113,46 @@ def run(
         result.raise_if_failed("Local command failed")
 
     return result
+
+
+class Call(Component):
+    class Props:
+        func = Prop(Callable, lazy=True)
+        run_after = Prop(list, default=[])
+
+    state = JsonState()
+    on_change = Callbacks()
+
+    @property
+    def host(self):
+        return self.props.host
+
+    def _set_must_run(self):
+        self.state["must-run"] = True
+
+    def call(self, **kwargs):
+        return self.props.func()
+
+    def build(self):
+        for other in self.props.run_after:
+            other.on_change.add(self._set_must_run)
+
+    def deploy(self, dry_run=False):
+        if self.props.run_after and not self.state.get("must-run"):
+            return Result()
+
+        if dry_run:
+            return Result(changed=True)
+
+        def _run():
+            self.on_change.invoke()
+            result = self.call()
+            self.state["must-run"] = False
+            return result
+
+        return Lazy(_run)
+
+    def add_commands(self, cli):
+        @cli.command
+        def call():
+            self.props.func()
