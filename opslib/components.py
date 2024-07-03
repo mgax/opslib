@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 import logging
 import sys
 from functools import cached_property
@@ -76,7 +77,7 @@ class Component:
         self._meta = self.Meta(component=self, name=name, parent=parent)
         self.build()
 
-    def __iter__(self):
+    def __iter__(self) -> "Iterator[Component]":
         return iter(self._children.values())
 
     def build(self):

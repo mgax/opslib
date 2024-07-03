@@ -1,5 +1,6 @@
 import json
 import logging
+from pathlib import Path
 import shutil
 
 logger = logging.getLogger(__name__)
@@ -11,20 +12,31 @@ class ComponentStateDirectory:
 
     @property
     def prefix(self):
+        return self.get_prefix(create=True)
+
+    def get_prefix(self, create=False) -> Path:
         if self.meta.parent is None:
             prefix = self.meta.stateroot
 
         else:
             parent_meta = self.meta.parent._meta
-            prefix = parent_meta.statedir.prefix / self.meta.name
+            prefix = parent_meta.statedir.get_prefix(create=create) / self.meta.name
 
-        self._mkdir(prefix)
+        if create:
+            self._mkdir(prefix)
+
         return prefix
 
     @property
     def path(self):
-        path = self.prefix / "_statedir"
-        self._mkdir(path)
+        return self.get_path(create=True)
+
+    def get_path(self, create=False) -> Path:
+        path = self.get_prefix(create=create) / "_statedir"
+
+        if create:
+            self._mkdir(path)
+
         return path
 
     def _mkdir(self, path):
