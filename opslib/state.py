@@ -1,75 +1,85 @@
+from collections.abc import Iterator
+from contextlib import contextmanager
 import json
 import logging
 from pathlib import Path
 import shutil
+from typing import cast
+
+import opslib
 
 logger = logging.getLogger(__name__)
 
 
-class ComponentStateDirectory:
-    def __init__(self, meta):
-        self.meta = meta
+class FilesystemStateProvider:
+    def __init__(self, stateroot: Path):
+        self.stateroot = stateroot
 
-    @property
-    def prefix(self):
-        return self.get_prefix(create=True)
+    def _get_directory(self, component: "opslib.Component") -> Path:
+        if component._meta.parent is None:
+            return self.stateroot
 
-    def get_prefix(self, create=False) -> Path:
-        if self.meta.parent is None:
-            prefix = self.meta.stateroot
+        return self._get_directory(component._meta.parent) / component._meta.name
 
-        else:
-            parent_meta = self.meta.parent._meta
-            prefix = parent_meta.statedir.get_prefix(create=create) / self.meta.name
+    def _get_state_directory(self, component: "opslib.Component"):
+        return self._get_directory(component) / "_statedir"
 
-        if create:
-            self._mkdir(prefix)
+    @contextmanager
+    def state_directory(self, component: "opslib.Component"):
+        statedir = self._get_state_directory(component)
+        if not statedir.exists():
+            statedir.mkdir(parents=True)
+        yield statedir
 
-        return prefix
+    def run_gc(self, component: "opslib.Component", dry_run=False):
+        child_names = {child._meta.name for child in component}
 
-    @property
-    def path(self):
-        return self.get_path(create=True)
+        def unexpected(item):
+            if isinstance(component, StatefulMixin) and item.name == "_statedir":
+                return False
 
-    def get_path(self, create=False) -> Path:
-        path = self.get_prefix(create=create) / "_statedir"
+            if not item.is_dir():
+                return False
 
-        if create:
-            self._mkdir(path)
+            return item.name not in child_names
 
-        return path
+        directory = self._get_directory(component)
+        if directory.exists():
+            for item in directory.iterdir():
+                if unexpected(item):
+                    print(item)
+                    if dry_run:
+                        continue
 
-    def _mkdir(self, path):
-        if not path.is_dir():
-            logger.debug("ComponentState init %s", path)
-            path.mkdir(mode=0o700)
+                    shutil.rmtree(item)
 
-
-class StateDirectory:
-    def __get__(self, obj, objtype=None):
-        return ComponentStateDirectory(obj)
+        for child in component:
+            self.run_gc(child, dry_run=dry_run)
 
 
 class ComponentJsonState:
     def __init__(self, component):
         self.component = component
 
-    @property
-    def _path(self):
-        return self.component._meta.statedir.path / "state.json"
+    @contextmanager
+    def json_path(self) -> Iterator[Path]:
+        with self.component.state_directory() as statedir:
+            yield statedir / "state.json"
 
     @property
     def _data(self):
         try:
-            with self._path.open() as f:
-                return json.load(f)
+            with self.json_path() as json_path:
+                with json_path.open() as f:
+                    return json.load(f)
 
         except FileNotFoundError:
             return {}
 
     def save(self, data=(), **kwargs):
-        with self._path.open("w") as f:
-            json.dump(dict(data, **kwargs), f, indent=2)
+        with self.json_path() as json_path:
+            with json_path.open("w") as f:
+                json.dump(dict(data, **kwargs), f, indent=2)
 
         self.__dict__["_data"] = data
 
@@ -99,26 +109,11 @@ class JsonState:
         return ComponentJsonState(obj)
 
 
-def run_gc(component, dry_run=False):
-    child_names = {child._meta.name for child in component}
-    statedir_prefix = component._meta.statedir.prefix
+class StatefulMixin:
+    _meta: "opslib.components.Meta"
 
-    def unexpected(item):
-        if item.name.startswith("_"):
-            return False
-
-        if not item.is_dir():
-            return False
-
-        return item.name not in child_names
-
-    for item in statedir_prefix.iterdir():
-        if unexpected(item):
-            print(item)
-            if dry_run:
-                continue
-
-            shutil.rmtree(item)
-
-    for child in component:
-        run_gc(child, dry_run=dry_run)
+    @contextmanager
+    def state_directory(self):
+        provider = self._meta.stack._state_provider
+        with provider.state_directory(cast(opslib.Component, self)) as statedir:
+            yield statedir

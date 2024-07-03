@@ -9,7 +9,7 @@ from opslib.lazy import Lazy, evaluate, lazy_property
 from opslib.local import run
 from opslib.props import Prop
 from opslib.results import OperationError, Result
-from opslib.state import JsonState
+from opslib.state import JsonState, StatefulMixin
 
 BASH_PREAMBLE = """\
 #!/bin/bash
@@ -17,7 +17,7 @@ set -euo pipefail
 """
 
 
-class ResticRepository(Component):
+class ResticRepository(StatefulMixin, Component):
     class Props:
         repository = Prop(str)
         password = Prop(str, lazy=True)

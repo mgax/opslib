@@ -11,7 +11,7 @@ from .lazy import Lazy, evaluate
 from .local import LocalRunResult, run
 from .props import Prop
 from .results import Result
-from .state import JsonState
+from .state import JsonState, StatefulMixin
 from .utils import diff
 
 
@@ -404,7 +404,7 @@ class Directory(Component):
         return self.host.run(cwd=self.path, *args, **kwargs)
 
 
-class Command(Component):
+class Command(StatefulMixin, Component):
     """
     The Command component represents a command that should be run on the
     host during deployment.

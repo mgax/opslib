@@ -1,9 +1,11 @@
+from contextlib import contextmanager
 import json
 import os
 from functools import cached_property
-from typing import Optional
+from typing import Any, Optional
 
 import click
+from opslib.state import StatefulMixin
 
 from .components import Component
 from .lazy import Lazy, NotAvailable, evaluate
@@ -39,7 +41,7 @@ class TerraformResult(Result):
             super().__init__(changed=False)
 
 
-class TerraformProvider(Component):
+class TerraformProvider(StatefulMixin, Component):
     """
     The TerraformProvider component represents a Provider in the Terraform
     universe. After a provider is defined, :class:`TerraformResource`
@@ -61,9 +63,11 @@ class TerraformProvider(Component):
         version = Prop(Optional[str])
         config = Prop(Optional[dict])
 
-    @cached_property
+    @contextmanager
     def plugin_cache_path(self):
-        return self._meta.statedir.path / "plugin-cache"
+        # TODO should be a "cache" directory, not a "state" directory
+        with self.state_directory() as statedir:
+            yield statedir / "plugin-cache"
 
     @cached_property
     def config(self):
@@ -109,35 +113,42 @@ class TerraformProvider(Component):
         )
 
 
-class _TerraformComponent(Component):
+class _TerraformComponent(StatefulMixin, Component):
     class Props:
         provider = Prop(Optional[TerraformProvider])
         type = Prop(str)
         args = Prop(dict, default={}, lazy=True)
         output = Prop(Optional[list])
 
+    config: Any
+
     @property
     def address(self):
         return f"{self.props.type}.thing"
 
-    @cached_property
-    def tf_path(self):
-        return self._meta.statedir.path / "terraform"
+    @contextmanager
+    def terraform_directory(self):
+        with self.state_directory() as statedir:
+            yield statedir / "terraform"
 
     def _run(self, *args, **kwargs):
         extra_env = {"TF_IN_AUTOMATION": "true"}
         provider = self.props.provider
-        if provider and not os.environ.get("TF_PLUGIN_CACHE_DIR"):
-            provider.plugin_cache_path.mkdir(exist_ok=True)
-            extra_env["TF_PLUGIN_CACHE_DIR"] = str(provider.plugin_cache_path)
 
-        return run("terraform", *args, **kwargs, cwd=self.tf_path, extra_env=extra_env)
+        with provider.plugin_cache_path() as plugin_cache_path:
+            if provider and not os.environ.get("TF_PLUGIN_CACHE_DIR"):
+                plugin_cache_path.mkdir(exist_ok=True)
+                extra_env["TF_PLUGIN_CACHE_DIR"] = str(plugin_cache_path)
+
+            with self.terraform_directory() as tfdir:
+                return run("terraform", *args, **kwargs, cwd=tfdir, extra_env=extra_env)
 
     def _init(self):
-        self.tf_path.mkdir(exist_ok=True, mode=0o700)
-        (self.tf_path / "main.tf.json").write_text(json.dumps(self.config, indent=2))
-        self._run("init", "-upgrade")  # XXX not concurrency safe
-        self._init = lambda: None
+        with self.terraform_directory() as tfdir:
+            tfdir.mkdir(exist_ok=True, mode=0o700)
+            (tfdir / "main.tf.json").write_text(json.dumps(self.config, indent=2))
+            self._run("init", "-upgrade")  # XXX not concurrency safe
+            self._init = lambda: None
 
     def run(self, *args, terraform_init=True, **kwargs):
         """
@@ -161,8 +172,9 @@ class _TerraformComponent(Component):
         def lazy_output(name):
             def get_value():
                 try:
-                    if not self.tf_path.exists():
-                        raise KeyError
+                    with self.terraform_directory() as tfdir:
+                        if not tfdir.exists():
+                            raise KeyError
 
                     output = self._output_values[name]
 

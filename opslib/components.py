@@ -3,23 +3,20 @@ import logging
 import sys
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Type, TypeVar
+from typing import Any, Type, TypeVar, cast
 
 from .props import get_instance_props
 from .results import Result
-from .state import StateDirectory
+from .state import FilesystemStateProvider
 
 logger = logging.getLogger(__name__)
 
 
 class Meta:
-    statedir = StateDirectory()
-
-    def __init__(self, component, name, parent, stateroot=None):
+    def __init__(self, component: "Component", name: str, parent: "Component | None"):
         self.component = component
         self.name = name
         self.parent = parent
-        self.stateroot = stateroot
 
     @cached_property
     def full_name(self):
@@ -29,8 +26,12 @@ class Meta:
         return f"{self.parent._meta.full_name}.{self.name}"
 
     @cached_property
-    def stack(self):
-        return self.component if self.parent is None else self.parent._meta.stack
+    def stack(self) -> "Stack":
+        return (
+            cast(Stack, self.component)
+            if self.parent is None
+            else self.parent._meta.stack
+        )
 
 
 class Component:
@@ -146,18 +147,17 @@ class Stack(Component):
         if import_name is None and stateroot is None:
             raise ValueError("Either `import_name` or `stateroot` must be set")
 
+        self._state_provider = FilesystemStateProvider(
+            stateroot or get_stateroot(import_name)
+        )
+
         super().__init__(**kwargs)
 
-        self._meta = self.Meta(
-            component=self,
-            name="__root__",
-            parent=None,
-            stateroot=stateroot or get_stateroot(import_name),
-        )
+        self._meta = self.Meta(component=self, name="__root__", parent=None)
         self.build()
 
 
-def walk(component):
+def walk(component) -> Iterator[Component]:
     """
     Iterate depth-first over all child components. The first item is
     ``component`` itself.

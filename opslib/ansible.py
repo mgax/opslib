@@ -11,6 +11,7 @@ from ansible.parsing.dataloader import DataLoader
 from ansible.playbook.play import Play
 from ansible.plugins.callback import CallbackBase
 from ansible.vars.manager import VariableManager
+from opslib.state import StatefulMixin
 
 from .callbacks import Callbacks
 from .components import Component
@@ -146,7 +147,7 @@ def run_ansible(hostname, ansible_variables, action, check=False):
     return result
 
 
-class AnsibleAction(Component):
+class AnsibleAction(StatefulMixin, Component):
     """
     The AnsibleAction component executes an Ansible module.
 

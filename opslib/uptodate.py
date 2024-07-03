@@ -1,6 +1,9 @@
+from collections.abc import Iterator
+from contextlib import contextmanager
 import hashlib
 import json
 from functools import partial, wraps
+from pathlib import Path
 
 from .results import Result
 
@@ -10,9 +13,10 @@ class ComponentUpToDate:
         self.component = component
         self.get_snapshot = get_snapshot
 
-    @property
-    def _path(self):
-        return self.component._meta.statedir.path / "uptodate.json"
+    @contextmanager
+    def json_path(self) -> Iterator[Path]:
+        with self.component.state_directory() as statedir:
+            yield statedir / "uptodate.json"
 
     def _get_hash(self):
         snapshot = self.get_snapshot()
@@ -20,11 +24,13 @@ class ComponentUpToDate:
         return hashlib.sha256(buffer).hexdigest()
 
     def set(self, uptodate):
-        self._path.write_text(json.dumps(self._get_hash() if uptodate else None))
+        with self.json_path() as json_path:
+            json_path.write_text(json.dumps(self._get_hash() if uptodate else None))
 
     def get(self):
         try:
-            hash = json.loads(self._path.read_text())
+            with self.json_path() as json_path:
+                hash = json.loads(json_path.read_text())
 
         except FileNotFoundError:
             hash = None

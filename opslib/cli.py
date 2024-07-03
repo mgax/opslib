@@ -7,9 +7,9 @@ import sys
 
 import click
 
+import opslib
 from .operations import apply, print_report
 from .results import OperationError
-from .state import run_gc
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +89,7 @@ class ComponentGroup(click.Group):
         return decorator
 
 
-def get_cli(component) -> click.Group:
+def get_cli(component: "opslib.Component") -> click.Group:
     @click.group(cls=ComponentGroup)
     def cli():
         pass
@@ -110,7 +110,8 @@ def get_cli(component) -> click.Group:
     @cli.command()
     @click.option("-n", "--dry-run", is_flag=True)
     def gc(dry_run):
-        run_gc(component, dry_run=dry_run)
+        provider = component._meta.stack._state_provider
+        provider.run_gc(component, dry_run=dry_run)
 
     @cli.forward_command("component")
     @click.pass_context
