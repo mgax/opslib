@@ -8,6 +8,7 @@ import sys
 import click
 
 from .operations import apply, print_report
+from .results import OperationError
 from .state import run_gc
 
 logger = logging.getLogger(__name__)
@@ -117,7 +118,12 @@ def get_cli(component) -> click.Group:
     def component_(ctx, path, args):
         target = lookup(component, path)
         target_cli = get_cli(target)
-        target_cli(obj=ctx.obj, args=args)
+        try:
+            target_cli(obj=ctx.obj, args=args)
+        except OperationError as error:
+            click.secho(f"Error in {target!r} {' '.join(args)}", fg="red", err=True)
+            error.result.print_output()
+            sys.exit(1)
 
     def register_apply_command(name, *decorators, **defaults):
         @click.option("--pdb", "use_pdb", is_flag=True)
