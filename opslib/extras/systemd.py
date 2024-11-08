@@ -74,7 +74,8 @@ class SystemdTimerService(Component):
     class Props:
         host = Prop(BaseHost)
         name = Prop(str)
-        on_calendar = Prop(str)
+        on_calendar = Prop(Optional[str])
+        on_boot_sec = Prop(Optional[str])
         timeout_start_sec = Prop(str)
         exec_start = Prop(Union[str, Path], lazy=True)
         user = Prop(Optional[str])
@@ -102,13 +103,17 @@ class SystemdTimerService(Component):
             ),
         )
 
+        Timer = {}
+        if self.props.on_calendar:
+            Timer["OnCalendar"] = self.props.on_calendar
+        if self.props.on_boot_sec:
+            Timer["OnBootSec"] = self.props.on_boot_sec
+
         self.timer = SystemdUnit(
             host=self.props.host,
             name=f"{self.props.name}.timer",
             contents=dict(
-                Timer=dict(
-                    OnCalendar=self.props.on_calendar,
-                ),
+                Timer=Timer,
                 Install=dict(
                     WantedBy="timers.target",
                 ),
